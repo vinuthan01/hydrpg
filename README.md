@@ -4,9 +4,21 @@ A browser RPG inspired by Hyderabad and Secunderabad. Built with plain HTML, CSS
 
 ## Play
 
-**Play online:** https://vinuthan01.github.io/hydrpg/
+**[Play HYDRPG online](https://vinuthan01.github.io/hydrpg/)**
 
 Open `index.html` locally in a modern browser, or use the public link above after GitHub Pages finishes publishing.
+
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/hyderabad-overworld.png" alt="HYDRPG overworld showing the Charminar area in Hyderabad" width="960">
+  <br><em>Explore a pixel-art Hyderabad, including the Charminar area.</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/turn-based-battle.png" alt="HYDRPG turn-based battle encounter at sunset" width="960">
+  <br><em>Choose your moves, manage items, and fight through turn-based encounters.</em>
+</p>
 
 ## Controls
 
