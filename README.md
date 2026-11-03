@@ -4,7 +4,7 @@ A browser RPG inspired by Hyderabad and Secunderabad. Built with plain HTML, CSS
 
 ## Play
 
-**Play online:** https://vinuthan01.github.io/hydrpg-v7/
+**Play online:** https://vinuthan01.github.io/hydrpg/
 
 Open `index.html` locally in a modern browser, or use the public link above after GitHub Pages finishes publishing.
 
