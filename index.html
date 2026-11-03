@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HYDRPG</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#12060c">
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="title">
+  <div class="card">
+    <div class="rangoli"></div>
+    <h1>HYDRPG</h1>
+    <p class="sub">An Indian street adventure through Hyderabad</p>
+    <div id="stepLogin">
+      <label>Your name</label>
+      <input id="uName" maxlength="14" autocomplete="username" spellcheck="false" placeholder="e.g. Vinuthan">
+      <label>Password</label>
+      <div class="pwrap"><input id="uPass" type="password" maxlength="30" autocomplete="current-password" placeholder="at least 3 characters">
+      <button type="button" id="eyeBtn" class="eye" aria-label="Show password" title="Show password"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3.2"/><line id="eyeSlash" x1="3" y1="3" x2="21" y2="21"/></svg></button></div>
+      <button id="goBtn" class="big">Enter the game</button>
+      <div id="msg" class="msg"></div>
+      <p class="hint">New here? Type a name and password and press the button. Returning players continue where they left off.<br>Progress is saved in this browser.</p>
+    </div>
+    <div id="stepLook" style="display:none">
+      <label>Choose your character</label>
+      <div id="looks"></div>
+      <button id="startBtn" class="big">Start adventure</button>
+      <button id="backBtn" class="small">Back</button>
+    </div>
+  </div>
+</div>
+<div id="devtag">dev- vinuthan01</div>
+<script src="js/data.js"></script>
+<script src="js/gen.js"></script>
+<script src="js/net.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/sprites.js"></script>
+<script src="js/world.js"></script>
+<script src="js/core.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/panels.js"></script>
+<script src="js/battle.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/main.js"></script>
+<script src="js/touch.js"></script>
+</body>
+</html>
+
