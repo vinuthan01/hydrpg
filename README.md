@@ -8,6 +8,38 @@ A browser RPG inspired by Hyderabad, Secunderabad and Hitech City. Built with pl
 
 Open the link above, or open `index.html` locally in a modern browser. On a phone, tap **Play full screen** on the login page for a more immersive view.
 
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/hyderabad-overworld.png" alt="Charminar plaza in Hyderabad with the round minimap" width="960">
+  <br><em>Explore a pixel-art Hyderabad with a round minimap and your current mission beside it.</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/turn-based-battle.png" alt="Turn-based battle showing effective, normal and waste moves" width="960">
+  <br><em>Every move shows if it is EFFECTIVE, NORMAL or a WASTE against the enemy, with its hit chance and damage.</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/hitech-city.png" alt="Hitech City at evening" width="960">
+  <br><em>Hitech City: glass towers, evening light and its own enemies and boss.</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/tower-floor-lift.png" alt="A floor of Cyber Gateway with the lift" width="960">
+  <br><em>Buildings have several floors, each with its own look, connected by a lift.</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/night-rain-bike.png" alt="Riding a bike at night in the rain" width="960">
+  <br><em>Day and night, rain, vehicles and wearable outfits.</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/inventory.png" alt="Slot-grid inventory" width="960">
+  <br><em>A slot-grid bag you can sort, filter, search, drag around and resize.</em>
+</p>
+
 ## Features
 
 **World**
