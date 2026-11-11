@@ -1,17 +1,17 @@
-html,body{margin:0;height:100%;background:#12060c;overflow:hidden;font-family:'Teko',sans-serif}
+html,body{margin:0;height:100%;background:#0e1426;overflow:hidden;font-family:'Teko',sans-serif}
 canvas#c{position:fixed;left:0;top:0;image-rendering:pixelated;image-rendering:crisp-edges}
 #title{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
-  background:radial-gradient(ellipse at 50% 30%,#7a2a3a 0%,#3a0f24 45%,#12060c 100%);z-index:5;overflow:auto}
-.card{position:relative;width:min(420px,92vw);padding:26px 28px 22px;background:rgba(58,12,24,.92);border:3px solid #e0b04a;
+  background:radial-gradient(ellipse at 50% 30%,#7a2a3a 0%,#3a0f24 45%,#0e1426 100%);z-index:5;overflow:auto}
+.card{position:relative;width:min(420px,92vw);padding:26px 28px 22px;background:rgba(58,12,24,.92);border:3px solid #8fa8d8;
   box-shadow:0 0 0 5px rgba(58,12,24,.92),0 0 0 7px #ff9933,0 20px 60px #000;text-align:center;color:#fff3d6}
 .rangoli{height:10px;margin:-6px -8px 12px;background:repeating-linear-gradient(90deg,#e63946 0 8px,#f2c94c 8px 16px,#2a9d8f 16px 24px,#ff9933 24px 32px)}
-h1{font:400 34px 'Rozha One',serif;margin:6px 0 2px;color:#ffd36b;text-shadow:0 2px 0 #7a1022}
+h1{font:400 34px 'Rozha One',serif;margin:6px 0 2px;color:#cfe0ff;text-shadow:0 2px 0 #2f5fb8}
 .sub{margin:0 0 14px;color:#ffb88a;font-size:19px}
-label{display:block;text-align:left;margin:10px 0 3px;font-size:19px;color:#ffd36b}
+label{display:block;text-align:left;margin:10px 0 3px;font-size:19px;color:#cfe0ff}
 input{width:100%;box-sizing:border-box;padding:8px 10px;font:400 22px 'Teko',sans-serif;background:#1a0a12;color:#fff3d6;border:2px solid #7a5a3a;outline:none}
-input:focus{border-color:#ffd36b}
-button{font:400 22px 'Teko',sans-serif;cursor:pointer;border:2px solid #e0b04a;color:#fff3d6;background:#7a1022;padding:6px 14px}
-button:hover{background:#c1440e}
+input:focus{border-color:#cfe0ff}
+button{font:400 22px 'Teko',sans-serif;cursor:pointer;border:2px solid #8fa8d8;color:#fff3d6;background:#2f5fb8;padding:6px 14px}
+button:hover{background:#3d6fd8}
 button.big{width:100%;margin-top:16px;padding:8px;font-size:26px;background:#1f6f4a}
 button.big:hover{background:#2a9a63}
 button.small{margin-top:10px;font-size:18px;background:#4a2a10}
@@ -21,17 +21,23 @@ button.small{margin-top:10px;font-size:18px;background:#4a2a10}
 canvas.look{width:84px;height:84px;image-rendering:pixelated;background:rgba(255,200,120,.12);cursor:pointer;border-radius:3px}
 
 .pwrap{position:relative}.pwrap input{padding-right:46px}
-button.eye{position:absolute;right:2px;top:2px;bottom:2px;width:42px;padding:0;border:0;background:transparent;color:#ffd36b;display:flex;align-items:center;justify-content:center}
+button.eye{position:absolute;right:2px;top:2px;bottom:2px;width:42px;padding:0;border:0;background:transparent;color:#cfe0ff;display:flex;align-items:center;justify-content:center}
 button.eye:hover{background:transparent;color:#fff}
-#devtag{position:fixed;right:8px;bottom:6px;z-index:6;font:400 15px 'Teko',sans-serif;color:#ffd36b;opacity:.8;pointer-events:none}
+#devtag{position:fixed;right:8px;bottom:6px;z-index:6;font:400 15px 'Teko',sans-serif;color:#cfe0ff;opacity:.8;pointer-events:none}
 canvas#c{touch-action:none}html,body{touch-action:none;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 input{-webkit-user-select:text;user-select:text}#title{touch-action:pan-y}
 #touch{position:fixed;inset:0;z-index:4;pointer-events:none;display:none}
 body.touch.ingame #touch{display:block}
-#pad{position:absolute;left:max(18px,env(safe-area-inset-left));bottom:max(30px,env(safe-area-inset-bottom));width:130px;height:130px;border-radius:50%;background:rgba(58,12,24,.45);border:3px solid rgba(224,176,74,.7);pointer-events:auto;touch-action:none}
-#nub{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:rgba(255,211,107,.75);border:3px solid #7a1022}
-.tb{position:absolute;pointer-events:auto;touch-action:none;border-radius:50%;border:3px solid #e0b04a;background:rgba(122,16,34,.75);color:#fff3d6;font:400 26px 'Teko',sans-serif;display:flex;align-items:center;justify-content:center;padding:0}
-.tb.on{background:#c1440e}
+#pad{position:absolute;left:max(18px,env(safe-area-inset-left));bottom:max(30px,env(safe-area-inset-bottom));width:130px;height:130px;border-radius:50%;background:rgba(20,30,56,.5);border:3px solid rgba(224,176,74,.7);pointer-events:auto;touch-action:none}
+#nub{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:rgba(255,211,107,.75);border:3px solid #2f5fb8}
+.tb{position:absolute;pointer-events:auto;touch-action:none;border-radius:50%;border:3px solid #8fa8d8;background:rgba(30,44,80,.8);color:#fff3d6;font:400 26px 'Teko',sans-serif;display:flex;align-items:center;justify-content:center;padding:0}
+.tb.on{background:#3d6fd8}
 #bA{right:max(20px,env(safe-area-inset-right));bottom:max(54px,env(safe-area-inset-bottom));width:78px;height:78px}
 #bR{right:max(110px,env(safe-area-inset-right));bottom:max(34px,env(safe-area-inset-bottom));width:60px;height:60px;font-size:20px}
 
+body.touch.modal #touch{display:block}body.touch.modal #pad,body.touch.modal .tb.sm{display:none}
+.tb.sm{width:54px;height:40px;border-radius:12px;font-size:16px}
+#bH{left:max(160px,env(safe-area-inset-left));bottom:max(34px,env(safe-area-inset-bottom))}
+#bF{left:max(160px,env(safe-area-inset-left));bottom:max(84px,env(safe-area-inset-bottom))}
+#bV{right:max(20px,env(safe-area-inset-right));bottom:max(140px,env(safe-area-inset-bottom))}
+body.isfull #bF{display:none}

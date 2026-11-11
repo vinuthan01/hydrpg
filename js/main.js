@@ -11,42 +11,46 @@ addEventListener('keydown', ev => {
   const k = ev.key.length == 1 ? ev.key.toLowerCase() : ev.key; keys[k] = 1;
   if (ev.key.startsWith('Arrow') || ev.key == ' ' || ev.key == 'Tab' || ev.key == 'Escape' || ev.key == 'Backspace' || ev.key == '/') ev.preventDefault();
   if (!S || (ev.repeat && !(INV && INV.focus) && !(CODE && k == 'Backspace'))) return; auInit();
+  if (MOD) {if (MOD.key) MOD.key(k); return}
+  if (ERRP) {ERRP = null}
   if (CODE) return codeKey(k);
   if (CHO) {if (/^[1-9]$/.test(k) && +k <= CHO.opts.length) CHO.cb(+k - 1); return}
-  if (SH) {if (k == 'Escape' || k == ' ') SH = null; else if (/^[1-9]$/.test(k)) buy(+k - 1); return}
+  if (SH) {if (k == 'Escape' || k == ' ') SH = null; else if (/^[1-9]$/.test(k)) buy(+k - 1); else if (k == 'ArrowRight' || k == 'd') SH.page++; else if (k == 'ArrowLeft' || k == 'a') SH.page = Math.max(0, SH.page - 1); return}
   if (MENU) return menuKey(k);
   if (B) return battleKey(k);
   if (PNL) {
     if (k == 'Escape' || k == PKEY[PNL]) PNL = null; else if (PKEY[k] === undefined && 'cjmg'.includes(k)) togglePnl(Object.keys(PKEY).find(p => PKEY[p] == k));
     else if (k == 'e') toggleInv();
     else if (PNL == 'map') {if (k == '+' || k == '=') MAP.z = Math.min(5, MAP.z * 1.3); else if (k == '-') MAP.z = Math.max(.8, MAP.z / 1.3); else if (dirs[k]) {const [dx, dy] = vec[dirs[k]], st = 40 / (MAP.s || 1); MAP.cx += dx * st; MAP.cy += dy * st}}
-    else if (PNL == 'guide') {if (k == 'ArrowLeft' || k == 'a') {GD.tab = (GD.tab + 7) % 8; GD.sc = 0} else if (k == 'ArrowRight' || k == 'd') {GD.tab = (GD.tab + 1) % 8; GD.sc = 0} else if (k == 'ArrowDown' || k == 's') GD.sc = Math.min(GD.max || 0, (GD.sc || 0) + 30); else if (k == 'ArrowUp' || k == 'w') GD.sc = Math.max(0, (GD.sc || 0) - 30)}
+    else if (PNL == 'guide') {if (k == 'ArrowLeft' || k == 'a') {GD.tab = (GD.tab + 11) % 12; GD.sc = 0} else if (k == 'ArrowRight' || k == 'd') {GD.tab = (GD.tab + 1) % 12; GD.sc = 0} else if (k == 'ArrowDown' || k == 's') GD.sc = Math.min(GD.max || 0, (GD.sc || 0) + 30); else if (k == 'ArrowUp' || k == 'w') GD.sc = Math.max(0, (GD.sc || 0) - 30)}
     return}
   if (INV) return invKey({key: k});
   if (D) {if (k == ' ' || k == 'Enter' || k == 'z' || k == 'f') advanceSay(); return}
   if (k == ' ' || k == 'Enter' || k == 'z' || k == 'f') {if (S.px == S.x && S.py == S.y) interact()}
   else if (k == 'e') toggleInv(); else if (k == 'c') togglePnl('char'); else if (k == 'j') togglePnl('jour'); else if (k == 'm') togglePnl('map'); else if (k == 'g') togglePnl('guide');
-  else if (k == 'n') setMusic(!SET.musOn); else if (k == 'q') quickHeal(); else if (k == 'Escape') MENU = {sel: 0}});
+  else if (k == 'n') setMusic(!SET.musOn); else if (k == 'q') quickHeal(); else if (k == 'h') askHint(); else if (k == 'v') {if (S.riding) toggleRide(); else if (S.veh.length) toggleRide(S.lastVeh || S.veh[0]); else toast('You do not own a vehicle. Vehicle World in Hitech City sells them.')} else if (k == 'Escape') MENU = {sel: 0}});
 addEventListener('keyup', e => {delete keys[e.key.length == 1 ? e.key.toLowerCase() : e.key]});
 addEventListener('blur', () => {keys = {}});
 // ---------- mouse (and touch) ----------
 let DRAGGED = false;
 const setMouse = e => {MOUSE.x = e.clientX / ZS; MOUSE.y = e.clientY / ZS};
-cv.addEventListener('mousemove', e => {setMouse(e); invDragMove(); const d = MAP.drag; if (d && PNL == 'map') {const dx = MOUSE.x - d.mx, dy = MOUSE.y - d.my; if (Math.abs(dx) + Math.abs(dy) > 4) d.moved = true; MAP.cx = d.cx - dx / MAP.s; MAP.cy = d.cy - dy / MAP.s}});
-cv.addEventListener('mousedown', e => {setMouse(e); auInit(); if (grabBag()) return; if (PNL == 'map' && MAP.rect && MOUSE.x > MAP.rect.x && MOUSE.x < MAP.rect.x + MAP.rect.w && MOUSE.y > MAP.rect.y && MOUSE.y < MAP.rect.y + MAP.rect.h) MAP.drag = {mx: MOUSE.x, my: MOUSE.y, cx: MAP.cx, cy: MAP.cy, moved: false}});
-addEventListener('mouseup', () => {invDragEnd(); if (MAP.drag && MAP.drag.moved) DRAGGED = true; MAP.drag = null});
+cv.addEventListener('mousemove', e => {setMouse(e); if (INV && INV.sbDrag) sbSet(); invDragMove(); panelDragMove(); const d = MAP.drag; if (d && PNL == 'map') {const dx = MOUSE.x - d.mx, dy = MOUSE.y - d.my; if (Math.abs(dx) + Math.abs(dy) > 4) d.moved = true; MAP.cx = d.cx - dx / MAP.s; MAP.cy = d.cy - dy / MAP.s}});
+cv.addEventListener('mousedown', e => {setMouse(e); auInit(); if (grabBag()) return; if (panelGrab()) return; if (INV) {const s = invSlotAt(MOUSE.x, MOUSE.y); INV.press = s && s.o ? {idx: s.idx, mx: MOUSE.x, my: MOUSE.y} : null} if (PNL == 'map' && MAP.rect && MOUSE.x > MAP.rect.x && MOUSE.x < MAP.rect.x + MAP.rect.w && MOUSE.y > MAP.rect.y && MOUSE.y < MAP.rect.y + MAP.rect.h) MAP.drag = {mx: MOUSE.x, my: MOUSE.y, cx: MAP.cx, cy: MAP.cy, moved: false}});
+addEventListener('mouseup', () => {if (INV) INV.sbDrag = false; panelDragEnd(); invDragEnd(); invDropEnd(); if (MAP.drag && MAP.drag.moved) DRAGGED = true; MAP.drag = null});
 cv.addEventListener('click', e => {setMouse(e); if (DRAGGED) {DRAGGED = false; return} if (!S) return; if (INV && INV.focus) INV.focus = false; uiClick()});
 cv.addEventListener('wheel', e => {e.preventDefault(); if (!S) return;
   if (PNL == 'map') {MAP.z = Math.max(.8, Math.min(5, MAP.z * (e.deltaY < 0 ? 1.15 : 1 / 1.15)))} else if (PNL == 'guide') GD.sc = Math.max(0, Math.min(GD.max || 0, (GD.sc || 0) + e.deltaY * .5)); else if (INV) INV.scroll += e.deltaY > 0 ? 1 : -1}, {passive: false});
-function grabBag() {const z = invZone(MOUSE.x, MOUSE.y); if (!z) return false; INV.drag = {w: z.w, h: z.h, mx: MOUSE.x, my: MOUSE.y, sw: INV.w, sh: INV.h}; return true}
+function sbSet() {const s = INV && INV.sb; if (!s) return; const f = Math.max(0, Math.min(1, (MOUSE.y - s.y - s.th / 2) / Math.max(1, s.h - s.th))); INV.scroll = Math.round(f * Math.max(0, s.total - s.rows))}
+function grabBag() {if (INV && INV.sb && MOUSE.x >= INV.sb.x && MOUSE.x <= INV.sb.x + INV.sb.w + 4 && MOUSE.y >= INV.sb.y && MOUSE.y <= INV.sb.y + INV.sb.h) {INV.sbDrag = true; sbSet(); return true} const z = invZone(MOUSE.x, MOUSE.y); if (!z) return false; INV.drag = {mv: z.mv, l: z.l, r: z.r, t: z.t, b: z.b, mx: MOUSE.x, my: MOUSE.y, sx: INV.x, sy: INV.y, sw: INV.w, sh: INV.h}; return true}
 let TD = null;
 cv.addEventListener('touchstart', e => {const t = e.touches[0]; MOUSE.x = t.clientX / ZS; MOUSE.y = t.clientY / ZS; auInit(); if (!S) return; e.preventDefault(); frameNow(); TD = {y: MOUSE.y, acc: 0};
-  if (grabBag()) return; if (PNL == 'map' && MAP.rect && MOUSE.x > MAP.rect.x && MOUSE.x < MAP.rect.x + MAP.rect.w && MOUSE.y > MAP.rect.y && MOUSE.y < MAP.rect.y + MAP.rect.h) MAP.drag = {mx: MOUSE.x, my: MOUSE.y, cx: MAP.cx, cy: MAP.cy, moved: false};
+  if (grabBag()) return; if (panelGrab()) return; if (INV) {const s = invSlotAt(MOUSE.x, MOUSE.y); INV.press = s && s.o ? {idx: s.idx, mx: MOUSE.x, my: MOUSE.y, t: performance.now()} : null}
+  if (PNL == 'map' && MAP.rect && MOUSE.x > MAP.rect.x && MOUSE.x < MAP.rect.x + MAP.rect.w && MOUSE.y > MAP.rect.y && MOUSE.y < MAP.rect.y + MAP.rect.h) MAP.drag = {mx: MOUSE.x, my: MOUSE.y, cx: MAP.cx, cy: MAP.cy, moved: false};
   uiClick()}, {passive: false});
-cv.addEventListener('touchmove', e => {const t = e.touches[0]; if (!S || !t) return; e.preventDefault(); setMouse(t); const dy = MOUSE.y - (TD ? TD.y : MOUSE.y); if (TD) TD.y = MOUSE.y;
-  if (INV && INV.drag) invDragMove(); else if (PNL == 'map' && MAP.drag) {const d = MAP.drag, dx = MOUSE.x - d.mx, dy2 = MOUSE.y - d.my; if (Math.abs(dx) + Math.abs(dy2) > 4) d.moved = true; MAP.cx = d.cx - dx / MAP.s; MAP.cy = d.cy - dy2 / MAP.s}
-  else if (PNL == 'guide') GD.sc = Math.max(0, Math.min(GD.max || 0, (GD.sc || 0) - dy)); else if (INV && TD) {TD.acc += dy; while (Math.abs(TD.acc) > 26) {INV.scroll += TD.acc > 0 ? -1 : 1; TD.acc -= Math.sign(TD.acc) * 26}}}, {passive: false});
-const tEnd = () => {invDragEnd(); MAP.drag = null; TD = null}; cv.addEventListener('touchend', tEnd); cv.addEventListener('touchcancel', tEnd);
+cv.addEventListener('touchmove', e => {const t = e.touches[0]; if (!S || !t) return; e.preventDefault(); setMouse(t); if (PANDRAG) {panelDragMove(); return} const dy = MOUSE.y - (TD ? TD.y : MOUSE.y); if (TD) TD.y = MOUSE.y;
+  if (INV && INV.press && (INV.dragSlot != null || performance.now() - INV.press.t > 320)) {if (INV.dragSlot == null) {INV.dragSlot = INV.press.idx; INV.sel = INV.press.idx}} else if (INV && INV.drag) invDragMove(); else if (PNL == 'map' && MAP.drag) {const d = MAP.drag, dx = MOUSE.x - d.mx, dy2 = MOUSE.y - d.my; if (Math.abs(dx) + Math.abs(dy2) > 4) d.moved = true; MAP.cx = d.cx - dx / MAP.s; MAP.cy = d.cy - dy2 / MAP.s}
+  else if (PNL == 'guide') GD.sc = Math.max(0, Math.min(GD.max || 0, (GD.sc || 0) - dy)); else if (INV && TD) {TD.acc += dy; while (Math.abs(TD.acc) > 38) {INV.scroll += TD.acc > 0 ? -1 : 1; TD.acc -= Math.sign(TD.acc) * 38}}}, {passive: false});
+const tEnd = () => {panelDragEnd(); invDragEnd(); invDropEnd(); MAP.drag = null; TD = null}; cv.addEventListener('touchend', tEnd); cv.addEventListener('touchcancel', tEnd);
 // ---------- frame loop ----------
 function drawTip() {if (!TIP || B) return; const ls = wrapT(TIP, 250, 14), w = Math.min(262, Math.max(...ls.map(l => tw(l, 14))) + 18), h = ls.length * 15 + 10, x = Math.max(4, Math.min(LW - w - 4, MOUSE.x + 14)), y = Math.max(4, Math.min(LH - h - 4, MOUSE.y + 18));
   ibox(x, y, w, h, {a: .95, plain: 1}); ls.forEach((l, i) => tx(l, x + 9, y + 16 + i * 15, '#fff3d6', 14))}
@@ -55,12 +59,11 @@ function frameNow() {
   if (S) {
     if (AU.ctx) setTrack(B ? 'battle' : 'world');
     if (B) drawBattle();
-    else {drawWorld(); hud();
-      if (CODE) drawCode(); else if (CHO) drawChoice(); else if (SH) drawShop(); else if (D) drawDialogue();
+    else {drawWorld(); hud(); drawExtras();
+      if (CODE) drawCode(); else if (CHO) drawChoice(); else if (SH) drawShop(); else if (MOD) MOD.draw(); else if (D) drawDialogue();
       if (MENU) drawMenu(); else if (PNL == 'map') drawMapP(); else if (PNL == 'char') drawSheet(); else if (PNL == 'jour') drawJour(); else if (PNL == 'guide') drawGuide();
       if (INV) drawInv(); drawTip()}
     if (fade) {X.fillStyle = 'rgba(0,0,0,' + fade / 40 + ')'; X.fillRect(0, 0, LW, LH)}}
-  $('devtag').style.display = S ? 'none' : ''; if (S && !B) drawCredit(); const z = INV && (INV.drag || invZone(MOUSE.x, MOUSE.y)); cv.style.cursor = z ? (z.w && z.h ? 'nwse-resize' : z.w ? 'ew-resize' : 'ns-resize') : CUR ? 'pointer' : 'default'}
+  $('devtag').style.display = S ? 'none' : ''; if (S && !B) drawCredit(); const z = INV && (INV.drag || invZone(MOUSE.x, MOUSE.y)); cv.style.cursor = z ? ((z.l && z.t) || (z.r && z.b) ? 'nwse-resize' : (z.r && z.t) || (z.l && z.b) ? 'nesw-resize' : z.l || z.r ? 'ew-resize' : 'ns-resize') : CUR ? 'pointer' : 'default'}
 function frame() {frameNow(); requestAnimationFrame(frame)}
 requestAnimationFrame(frame);
-

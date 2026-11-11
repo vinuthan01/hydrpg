@@ -2,7 +2,7 @@
 // Every clickable thing calls hit(); it returns true while the mouse is over it and stores tooltips.
 const F_T = "'Teko',monospace", F_R = "'Rozha One',serif", F_H = "'Caveat',cursive";
 const PAL = {maroon: '58,12,24', gold: '#e0b04a', saffron: '#ff9933', cream: '#fff3d6', teal: '#1f8a8a', green: '#2f8f5a'};
-let IS_TOUCH = false, MOUSE = {x: -1, y: -1}, HIT = [], UT = {ox: 0, oy: 0, s: 1}, TIP = null, CUR = false;
+let FS = 1, IS_TOUCH = false, MOUSE = {x: -1, y: -1}, HIT = [], UT = {ox: 0, oy: 0, s: 1}, TIP = null, CUR = false;
 function uiBegin() {HIT = []; TIP = null; CUR = false; UT = {ox: 0, oy: 0, s: 1}}
 function hit(x, y, w, h, cb, tip) {
   const s = UT.s, sx = UT.ox + x * s, sy = UT.oy + y * s, sw = w * s, sh = h * s; HIT.push({x: sx, y: sy, w: sw, h: sh, cb, tip});
@@ -14,15 +14,16 @@ function panel(fn, w = 480, h = 352, cap = 1.7) {
   X.save(); X.translate(ox, oy); X.scale(us, us); UT = {ox, oy, s: us}; fn(); X.restore(); UT = {ox: 0, oy: 0, s: 1}}
 // ---------- text ----------
 function tx(t, x, y, c = PAL.cream, sz = 15, f = F_T, a = 'left', o = true) {
-  X.font = sz + 'px ' + f; X.textAlign = a; X.textBaseline = 'alphabetic';
+  X.font = (sz * FS) + 'px ' + f; X.textAlign = a; X.textBaseline = 'alphabetic';
   if (o) {X.lineJoin = 'round'; X.lineWidth = 3; X.strokeStyle = 'rgba(30,6,12,.85)'; X.strokeText(t, x, y)} X.fillStyle = c; X.fillText(t, x, y); X.textAlign = 'left'}
 // vertically centred text: baseline is placed so the capital letters sit in the middle of cy
-function capH(sz, f) {X.font = sz + 'px ' + (f || F_T); return X.measureText('H').actualBoundingBoxAscent || sz * .7}
+function capH(sz, f) {X.font = (sz * FS) + 'px ' + (f || F_T); return X.measureText('H').actualBoundingBoxAscent || sz * .7}
 function txm(t, x, cy, c, sz = 15, f = F_T, a = 'left', o = true) {tx(t, x, cy + capH(sz, f) / 2, c, sz, f, a, o)}
 const DEV_CREDIT = 'dev- vinuthan01';
 function drawCredit() {X.font = '13px ' + F_T; const w = X.measureText(DEV_CREDIT).width; X.globalAlpha = .8; tx(DEV_CREDIT, LW - 6, LH - 6, '#ffd36b', 13, F_T, 'right'); X.globalAlpha = 1}
-const tw = (t, sz, f) => {X.font = sz + 'px ' + (f || F_T); return X.measureText(t).width};
-function wrapT(t, maxW, sz, f) {const ws = String(t).split(' '), L = []; let l = ''; X.font = sz + 'px ' + (f || F_T);
+function fitT(t, maxW, sz, f) {X.font = (sz * FS) + 'px ' + (f || F_T); t = String(t); if (X.measureText(t).width <= maxW) return t; while (t.length > 1 && X.measureText(t + '...').width > maxW) t = t.slice(0, -1); return t + '...'}
+const tw = (t, sz, f) => {X.font = (sz * FS) + 'px ' + (f || F_T); return X.measureText(t).width};
+function wrapT(t, maxW, sz, f) {const ws = String(t).split(' '), L = []; let l = ''; X.font = (sz * FS) + 'px ' + (f || F_T);
   for (const w of ws) {const n = l ? l + ' ' + w : w; if (X.measureText(n).width > maxW && l) {L.push(l); l = w} else l = n} if (l) L.push(l); return L}
 // ---------- Indian-themed frames ----------
 function diamond(x, y, r, c) {X.fillStyle = c; X.beginPath(); X.moveTo(x, y - r); X.lineTo(x + r, y); X.lineTo(x, y + r); X.lineTo(x - r, y); X.closePath(); X.fill()}
@@ -55,21 +56,19 @@ function togglePnl(p) {INV = null; PNL = PNL == p ? null : p; if (p == 'map' && 
 // ---------- HUD ----------
 function hud() {
   const d = cur().d;
-  ibox(4, 4, 186, 74, {a: .74}); tx(S.name, 13, 22, '#ffd36b', 13, F_R); tx('Lv ' + S.lv, 181, 22, PAL.cream, 15, F_T, 'right');
-  bar(13, 28, 168, S.hp, S.maxhp, S.hp < S.maxhp * .3 ? '#ff7a1a' : '#e63946', 12); tx('HP ' + S.hp + '/' + S.maxhp, 97, 38, '#fff', 12, F_T, 'center');
-  bar(13, 45, 168, S.xp, S.lv * 25, '#e0b04a', 6); tx('XP ' + S.xp + '/' + S.lv * 25, 181, 44, '#e0b04a', 11, F_T, 'right', false);
-  tx('Rs.' + S.money, 13, 69, '#ffd36b', 14); tx('Chai x' + S.chai, 72, 69, '#ffb88a', 14); tx(ITEMS[S.eq].n, 181, 69, '#bfe6f5', 13, F_T, 'right');
-  // mission box: shrink-wrapped to its text, with the text centred inside it
-  const ob = objective(), lbl = 'Mission', lw = tw(lbl, 13, F_R), padX = 14, gap = 12, maxBox = Math.min(320, LW - 8), ls = wrapT(ob, maxBox - padX * 2 - lw - gap, 15),
-    tl = Math.max(...ls.map(l => tw(l, 15))), bw = Math.ceil(padX * 2 + lw + gap + tl), bh = Math.max(32, ls.length * 16 + 16), by = 82, cyb = by + bh / 2;
-  ibox(4, by, bw, bh, {a: .66, plain: 1}); txm(lbl, 4 + padX, cyb, PAL.saffron, 13, F_R);
-  ls.forEach((l, i) => txm(l, 4 + padX + lw + gap, cyb + (i - (ls.length - 1) / 2) * 16, PAL.cream, 15));
+  if (!(INV && INV.rect && INV.x < 186 && INV.y < 60)) {
+    drawStatHud();
+  }
+  if (!INV) {
+    const ob = objective(), sz = LW < 440 ? 11 : 13, ls = wrapT(ob, Math.min(300, LW - 60), sz);
+    const cl = charmLeft(); if (cl > 0) tx('Nazar charm: enemies keep away ' + Math.floor(cl / 60) + ':' + String(cl % 60).padStart(2, '0'), 8, 76, '#9be7ff', 11);
+  }
   // icon buttons: a row on wide screens, a column down the right edge on narrow (phone) screens
   const n = HUDI.length, narrow = LW < 440, x0 = LW - n * 31 - 4;
   HUDI.forEach((h, i) => {const x = narrow ? LW - 32 : x0 + i * 31, y = narrow ? 5 + i * 31 : 5, on = h.k == 'e' ? INV : h.k == 'c' ? PNL == 'char' : h.k == 'j' ? PNL == 'jour' : h.k == 'm' ? PNL == 'map' : h.k == 'g' ? PNL == 'guide' : h.k == 'esc' ? MENU : 0;
-    const ov = hit(x, y, 28, 28, () => {if (!B && !D && !SH && !CODE && !CHO) h.f()}, h.n + '  [' + h.key + ']'); X.fillStyle = on ? '#c1440e' : ov ? '#8a1c30' : 'rgba(58,12,24,.82)'; X.fillRect(x, y, 28, 28); X.strokeStyle = PAL.gold; X.lineWidth = 1.5; X.strokeRect(x + .75, y + .75, 26.5, 26.5);
+    const ov = hit(x, y, 28, 28, () => {if (!B && !D && !SH && !CODE && !CHO) h.f()}, h.n + '  [' + h.key + ']'); hudBtn(x, y, on, ov);
     icon(h.k, x + 6, y + 5); tx(h.key, x + 26, y + 26, '#ffd36b', 10, F_T, 'right')});
-  if (toastT) {const t = toastS, w = Math.min(LW - 20, tw(t, 15) + 30), a = Math.min(1, toastT / 20); X.globalAlpha = a; ibox((LW - w) / 2, 112, w, 26, {a: .85, plain: 1}); tx(t, LW / 2, 130, '#ffe9a8', 15, F_T, 'center'); X.globalAlpha = 1}}
+  if (toastT) {const t = toastS, w = Math.min(LW - 20, tw(t, 15) + 30), a = Math.min(1, toastT / 20); X.globalAlpha = a; ibox((LW - w) / 2, LH - 70, w, 26, {a: .85, plain: 1}); tx(t, LW / 2, LH - 52, '#ffe9a8', 15, F_T, 'center'); X.globalAlpha = 1}}
 // ---------- dialogue (bottom of the screen, slightly transparent) ----------
 function drawDialogue() {
   const bw = Math.min(LW - 24, 640), bh = D.L ? 92 : 80, bx = (LW - bw) / 2, by = LH - bh - 14, line = D.l[D.i], shown = Math.min(line.length, Math.floor((tick - D.t0) * 1.4));
@@ -83,7 +82,7 @@ function drawDialogue() {
 function drawChoice() {
   uiModal(); panel(() => {ibox(40, 70, 400, 210); plate(240, 56, 'Riddle', 16); wrapT(CHO.q, 350, 17).forEach((l, i) => tx(l, 64, 118 + i * 20, '#fff7e0', 17));
     CHO.opts.forEach((o, i) => btn(64, 170 + i * 34, 352, 28, (i + 1) + '.  ' + o, () => CHO.cb(i), '', '#7a1022', 16))}, 480, 352)}
-const uiModal = () => {rc('rgba(10,2,6,.55)', 0, 0, LW, LH); hit(0, 0, LW, LH, null)};
+let uiModal = () => {rc('rgba(10,2,6,.55)', 0, 0, LW, LH); hit(0, 0, LW, LH, null)};
 // ---------- gate lock ----------
 function drawCode() {
   uiModal(); panel(() => {ibox(70, 30, 340, 290); plate(240, 16, 'Hideout Gate Lock', 16); closeBtn(384, 40, () => {CODE = null});
@@ -101,4 +100,3 @@ function drawShop() {
     SH.stock.forEach((k, i) => {const y = 112 + i * 44, it = k == 'chai' ? CHAI : ITEMS[k], p = k == 'chai' ? CHAI.price : it.price, own = k != 'chai' && S.items.includes(k), ov = hit(66, y, 348, 38, () => buy(i), own ? 'Already owned' : 'Click to buy');
       X.fillStyle = ov ? 'rgba(193,68,14,.5)' : 'rgba(0,0,0,.28)'; X.fillRect(66, y, 348, 38); X.strokeStyle = 'rgba(224,176,74,.6)'; X.strokeRect(66.5, y + .5, 347, 37); tx((i + 1) + '.  ' + it.n, 76, y + 17, PAL.cream, 16); tx(it.desc, 76, y + 32, '#c9b79a', 13); tx(own ? 'Owned' : 'Rs.' + p, 404, y + 24, own ? '#7ee08a' : S.money >= p ? '#ffd36b' : '#ff8a6a', 17, F_T, 'right')});
     tx('Press 1-' + SH.stock.length + ' to buy, Esc to leave', 240, 310, '#c9b79a', 13, F_T, 'center')}, 480, 352)}
-

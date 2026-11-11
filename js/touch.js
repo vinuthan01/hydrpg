@@ -3,7 +3,8 @@
   const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || matchMedia('(pointer:coarse)').matches; if (!isTouch) return;
   document.body.classList.add('touch'); IS_TOUCH = true;
   const root = document.createElement('div'); root.id = 'touch';
-  root.innerHTML = '<div id="pad"><div id="nub"></div></div><button class="tb" id="bR">Run</button><button class="tb" id="bA">A</button>'; document.body.appendChild(root);
+  root.innerHTML = '<div id="pad"><div id="nub"></div></div><button class="tb" id="bR">Run</button><button class="tb" id="bA">A</button><button class="tb sm" id="bH">Hint</button><button class="tb sm" id="bF">Full</button><button class="tb sm" id="bV">Ride</button>'; document.body.appendChild(root);
+  if ($('fsBtn')) $('fsBtn').onclick = toggleFull; addEventListener('touchend', function once() {removeEventListener('touchend', once); if (!document.fullscreenElement && !SET.noFS) {try {toggleFull()} catch (e) {}}}, {once: true});
   const pad = $('pad'), nub = $('nub'), DK = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
   const clear = () => {DK.forEach(k => delete keys[k]); nub.style.transform = ''};
   const move = e => {const r = pad.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2), m = Math.hypot(dx, dy), lim = r.width / 2 - 20, k = m > lim ? lim / m : 1;
@@ -15,8 +16,9 @@
   const key = (k, d) => dispatchEvent(new KeyboardEvent(d ? 'keydown' : 'keyup', {key: k}));
   $('bA').addEventListener('pointerdown', e => {e.preventDefault(); if (document.activeElement) document.activeElement.blur(); key(' ', 1)}); $('bA').addEventListener('pointerup', () => key(' ', 0));
   let run = false; $('bR').addEventListener('pointerdown', e => {e.preventDefault(); run = !run; if (run) keys.Shift = 1; else delete keys.Shift; $('bR').classList.toggle('on', run)});
+  $('bH').addEventListener('pointerdown', e => {e.preventDefault(); key('h', 1); key('h', 0)}); $('bV').addEventListener('pointerdown', e => {e.preventDefault(); key('v', 1); key('v', 0)});
+  $('bF').addEventListener('pointerdown', e => {e.preventDefault(); toggleFull()});
   // show the pad only while you are walking around (not in menus, battles or dialogue)
-  setInterval(() => {const on = !!S && !B && !D && !SH && !CODE && !CHO && !MENU && !PNL && !INV; document.body.classList.toggle('ingame', on); if (!on) clear()}, 120);
-  if (!localStorage.getItem('bq_settings')) {SET.zoom = 1; fit()}
+  setInterval(() => {const on = !!S && !B && !D && !SH && !CODE && !CHO && !MENU && !PNL && !INV; document.body.classList.toggle('ingame', on); document.body.classList.toggle('modal', !!MOD && !on); $('bV').style.display = S && S.veh && S.veh.length ? '' : 'none'; if (!on) clear()}, 120);
+  if (!localStorage.getItem('bq_settings')) {SET.zoom = 0; SET.fsi = 0; FS = .8; fit()}
 })();
-

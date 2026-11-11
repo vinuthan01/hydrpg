@@ -1,54 +1,103 @@
 # HYDRPG
 
-A browser RPG inspired by Hyderabad and Secunderabad. Built with plain HTML, CSS, and JavaScript; no install, build step, or game server is needed.
+**[PLAY HYDRPG ONLINE](https://vinuthan01.github.io/hydrpg/)**
+
+A browser RPG inspired by Hyderabad, Secunderabad and Hitech City. Built with plain HTML, CSS, and JavaScript; no install, build step, or game server is needed. It works on desktop and on phones, and can be installed to the home screen.
 
 ## Play
 
-**[Play HYDRPG online](https://vinuthan01.github.io/hydrpg/)**
-
-Open `index.html` locally in a modern browser, or use the public link above after GitHub Pages finishes publishing.
+Open the link above, or open `index.html` locally in a modern browser. On a phone, tap **Play full screen** on the login page, or add the game to your home screen (Share > Add to Home Screen on iPhone, the install button in Chrome on Android).
 
 ## Screenshots
 
 <p align="center">
-  <img src="screenshots/hyderabad-overworld.png" alt="HYDRPG overworld showing the Charminar area in Hyderabad" width="960">
-  <br><em>Explore a pixel-art Hyderabad, including the Charminar area.</em>
+  <img src="screenshots/hyderabad-overworld.png" alt="Charminar plaza in Hyderabad with the round minimap" width="960">
+  <br><em>Explore a pixel-art Hyderabad with a round minimap and your current mission beside it.</em>
 </p>
 
 <p align="center">
-  <img src="screenshots/turn-based-battle.png" alt="HYDRPG turn-based battle encounter at sunset" width="960">
-  <br><em>Choose your moves, manage items, and fight through turn-based encounters.</em>
+  <img src="screenshots/turn-based-battle.png" alt="Turn-based battle showing effective, normal and waste moves" width="960">
+  <br><em>Every move shows if it is EFFECTIVE, NORMAL or a WASTE against the enemy, with its hit chance and damage.</em>
 </p>
+
+<p align="center">
+  <img src="screenshots/hitech-city.png" alt="Hitech City at evening" width="960">
+  <br><em>Hitech City: glass towers, evening light and its own enemies and boss.</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/tower-floor-lift.png" alt="A floor of Cyber Gateway with the lift" width="960">
+  <br><em>Buildings have several floors, each with its own look, connected by a lift.</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/night-rain-bike.png" alt="Riding a bike at night in the rain" width="960">
+  <br><em>Day and night, rain, vehicles and wearable outfits.</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/inventory.png" alt="Slot-grid inventory" width="960">
+  <br><em>A slot-grid bag you can sort, filter, search, drag around and resize.</em>
+</p>
+
+## Features
+
+**World**
+- Three cities to play: Hyderabad, Secunderabad and Hitech City. After you beat Bade Bhai in Hyderabad, you choose which of the other two to take on first. Ameerpet is coming soon.
+- A tunnel connects Hitech City and Secunderabad without going through Hyderabad.
+- A full day and night cycle (about 30 minutes of day and 30 minutes of night) with morning, afternoon, evening, sunset and night looks. Streetlights come on at night, some shops close, and Scrapers and Tech-Mads only appear at night.
+- Monsoon rain with puddles, thunder and better fishing.
+- Many kinds of trees, flowers, animated interiors, and multi-floor towers with lifts.
+- Traffic with autos, cabs, cars, bikes and scooties. Autos and cabs give rides to any explored spot. Vehicles and trains can hurt you.
+- You can walk through townspeople and animals; they step aside.
+
+**Fights**
+- Turn-based fights where each weapon has POW, SHARP and HEAVY moves. Each enemy has a weakness and a resistance.
+- Enemy difficulty follows your level and the order in which you take the cities.
+- Boss stars appear in your stats when you defeat a boss.
+- Bosses: Bade Bhai, Tiger Anna and RIG Ritesh.
+
+**Items and style**
+- Weapons with simple funny names, food and fish with their own icons, and many wearables: hats, capes, pants, tops, shoes and face items.
+- Four fishing rods, each different, and fish that can heal, poison, slow or blind you.
+- Vehicles to buy: cycle, scooty, bike, auto, tractor and car.
+- Shops show a preview icon and a try-on of clothes before you buy.
+
+**Pets**
+- Pet cats and dogs, give them a fish and they follow you, and you can let them go again.
+
+**Play and progress**
+- Side quests, secrets and a story twist, plus achievements.
+- A casino-style arcade: bet money on cricket, football or bowling, win more if you play well and lose the bet if you lose.
+- A hint system, an optional mission arrow, and autosave.
+- Round minimap: click it to open the full map.
+- Menu has text size, minimap and mission arrow switches, and a backup and restore code for your save.
 
 ## Controls
 
-| Input | Action |
-|---|---|
-| W A S D / arrow keys | Walk (hold Shift to run) |
-| Space / F | Talk, read, open, or swim while facing water |
-| E | Open the bag |
-| C / J / M / G | Character / Journal / Map / Guide |
-| Q | Drink chai to heal |
-| N | Toggle music |
-| Esc | Open the menu |
-| 1-6 | Battle actions |
+| Key | Action |
+| --- | --- |
+| W A S D or arrows | Walk |
+| Shift | Run |
+| Space or F | Talk, open, fish, pet |
+| E | Bag (hover to read, double-click to use, drag to reorder) |
+| C | Player stats and achievements |
+| J | Journal |
+| M | Map |
+| H | Buy a hint |
+| T | Turn the mission arrow on or off |
+| V | Ride or get off a vehicle |
+| G | Guide |
+| Esc | Menu |
 
-On phones and tablets, use the on-screen joystick and buttons. Landscape orientation gives the game more room.
+On a phone: joystick, **A** to talk, **Run**, **Hint**, **Ride** and **Full** buttons. Every screen can be moved by its top bar and resized from its corners.
 
-## Saves and online features
+## Saves and updates
 
-Player profiles and saves are stored only in the current browser's local storage. They do not sync between devices. The password is hashed, but this static game does not provide server-grade account security. `js/net.js` is currently a multiplayer networking stub; online multiplayer, shared accounts, and leaderboards are not enabled.
+Saves live in each player's own browser (`localStorage`), not in this repo. Updating the repo does **not** erase them as long as the game stays at the same web address and the save keys in `js/core.js` are not renamed. New updates only add missing fields. Players lose data only if they clear browser data, switch browser or device, or the repo name or domain changes. Use **Menu > Backup / Restore** to copy a backup code.
 
-## Project status
+## Credits
 
-The game is playable as a solo adventure. Medchal is currently marked as “coming soon” in-game and is not built yet.
+Developer: **vinuthan01**
 
-## Credits and licenses
-
-The included Caveat, Pacifico, Rozha One, and Teko fonts are under SIL Open Font License 1.1; their license texts are in `licenses/`. Music and sound effects are generated in the browser with Web Audio.
-
-Game code is licensed under the MIT License. See [`LICENSE`](LICENSE). Developer: **vinuthan01**.
-
-## GitHub Pages
-
-This repository is configured to publish from the `main` branch root. For a fork, open **Settings → Pages**, choose **Deploy from a branch**, select `main` and `/(root)`, and save.
+Fonts are bundled under their original open licenses (see the `licenses` folder). This project is released under the MIT License.

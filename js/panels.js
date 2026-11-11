@@ -9,6 +9,7 @@ function itemIcon(id, x, y, s = 1) {
   else if (id == 'carrom') {X.fillStyle = '#f2c94c'; X.beginPath(); X.arc(10, 10, 7, 0, 7); X.fill(); X.fillStyle = '#c1121f'; X.beginPath(); X.arc(10, 10, 4, 0, 7); X.fill(); X.fillStyle = '#fff'; X.beginPath(); X.arc(10, 10, 1.5, 0, 7); X.fill()}
   else if (id == 'lathi') {line('#c9a26b', 3, 19, 17, 2, 3); for (const k of [6, 11, 15]) line('#8b5e3c', k - 1, 20 - k + 2, k + 1, 18 - k, 1)}
   else if (id == 'gada') {line('#8b5e3c', 4, 19, 12, 9, 3); X.fillStyle = '#f2c94c'; X.beginPath(); X.arc(14, 6, 5, 0, 7); X.fill(); X.fillStyle = '#c9a23a'; X.beginPath(); X.arc(14, 6, 2.5, 0, 7); X.fill(); r('#f2c94c', 13, 0, 2, 3)}
+  else if (iconX(id, r, line)) {}
   else if (id == 'q_tiffin') {X.scale(.8, .8); tiffinShape(r)}
   else if (id == 'q_parcel') {X.scale(.8, .8); parcelShape(r)}
   else if (id == 'chai') {r('#fff', 7, 1, 1, 3); r('#fff', 11, 0, 1, 4); r('#c1440e', 4, 6, 11, 11); r('#e8a070', 4, 6, 11, 3); r('#c1440e', 15, 8, 3, 5); r('#8a2f0a', 5, 16, 9, 2)}
@@ -18,17 +19,18 @@ function itemIcon(id, x, y, s = 1) {
   X.restore()}
 // ---------- bag: slides in on the left, searchable ----------
 function drawInv() {
-  INV.w = Math.max(Math.min(190, LW - 12), Math.min(INV.w || SET.bagW || Math.min(244, LW * .5), LW - 12)); INV.h = Math.max(Math.min(280, LH - 12), Math.min(INV.h || SET.bagH || LH - 12, LH - 12));
-  const w = INV.w, h = INV.h, x = 6, y = 6, L = bagList(INV.q); INV.rect = {x, y, w, h}; hit(x, y, w, h, null); ibox(x, y, w, h, {a: .98});
-  tx('BAG', x + 16, y + 26, '#ffd36b', 17, F_R); tx('Rs.' + S.money, x + w - 38, y + 26, '#ffd36b', 15, F_T, 'right'); closeBtn(x + w - 28, y + 10, () => {INV = null}); btn(x + 58, y + 10, 46, 18, 'Reset', () => {INV.w = Math.min(244, LW * .5); INV.h = LH - 12; delete SET.bagW; delete SET.bagH; saveSettings()}, 'Reset the bag to its normal size', '#4a2a10', 12);
-  const sy = y + 36, fo = hit(x + 10, sy, w - 20, 22, () => {if (IS_TOUCH) {const v = prompt('Search items', INV.q || ''); if (v !== null) {INV.q = v.slice(0, 18); INV.sel = 0; INV.scroll = 0}} else INV.focus = true}, 'Click, then type to search'); X.fillStyle = 'rgba(0,0,0,.4)'; X.fillRect(x + 10, sy, w - 20, 22); X.strokeStyle = INV.focus ? '#ffd36b' : fo ? '#c9a26b' : '#7a5a3a'; X.lineWidth = 1.5; X.strokeRect(x + 10.75, sy + .75, w - 21.5, 20.5);
+  if (INV.w == null) {const b = SET.bag || {}; INV.w = b.w || Math.min(244, LW * .5); INV.h = b.h || Math.max(270, LH - 90); INV.x = b.x != null ? b.x : 6; INV.y = b.y != null ? b.y : (LH - 90 >= 270 ? 84 : 6)}
+  INV.w = Math.max(Math.min(190, LW - 12), Math.min(INV.w, LW - 12)); INV.h = Math.max(Math.min(270, LH - 12), Math.min(INV.h, LH - 12)); INV.x = Math.max(0, Math.min(INV.x, LW - INV.w)); INV.y = Math.max(0, Math.min(INV.y, LH - INV.h));
+  const w = INV.w, h = INV.h, x = INV.x, y = INV.y, L = bagList(INV.q); INV.rect = {x, y, w, h}; hit(x, y, w, h, null); ibox(x, y, w, h, {a: .98});
+  tx('BAG', x + 16, y + 26, '#ffd36b', 17, F_R); tx('Rs.' + S.money, x + w - 38, y + 26, '#ffd36b', 15, F_T, 'right'); closeBtn(x + w - 28, y + 10, () => {INV = null}); btn(x + 58, y + 10, 46, 18, 'Reset', () => {INV.w = INV.h = INV.x = INV.y = null; delete SET.bag; saveSettings()}, 'Reset the bag to its normal size', '#4a2a10', 12);
+  const sy = y + 36, fo = hit(x + 10, sy, w - 20, 22, () => {if (IS_TOUCH) {const v = prompt('Search items', INV.q || ''); if (v !== null) {if (v.trim().toUpperCase() == 'UNLOCK') devUnlock(); else {INV.q = v.slice(0, 18); INV.sel = 0; INV.scroll = 0}}} else INV.focus = true}, 'Click, then type to search'); X.fillStyle = 'rgba(0,0,0,.4)'; X.fillRect(x + 10, sy, w - 20, 22); X.strokeStyle = INV.focus ? '#ffd36b' : fo ? '#c9a26b' : '#7a5a3a'; X.lineWidth = 1.5; X.strokeRect(x + 10.75, sy + .75, w - 21.5, 20.5);
   tx(INV.q || (INV.focus ? '' : 'Search items...'), x + 18, sy + 16, INV.q ? PAL.cream : '#9c8a74', 15); if (INV.focus && (tick >> 5) & 1) rc('#ffd36b', x + 19 + tw(INV.q, 15), sy + 5, 2, 13);
   if (!L.length) tx('Nothing matches "' + INV.q + '"', x + w / 2, y + 120, '#9c8a74', 15, F_T, 'center');
   INV.sel = Math.max(0, Math.min(INV.sel, L.length - 1)); const ly = sy + 30, lh = h - 36 - 30 - 138, rows = Math.max(1, Math.floor(lh / 28)); INV.scroll = Math.max(0, Math.min(INV.scroll, Math.max(0, L.length - rows)));
   if (INV.sel < INV.scroll) INV.scroll = INV.sel; if (INV.sel >= INV.scroll + rows) INV.scroll = INV.sel - rows + 1;
   L.slice(INV.scroll, INV.scroll + rows).forEach((o, k) => {const i = INV.scroll + k, ry = ly + k * 28, sel = i == INV.sel, ov = hit(x + 10, ry, w - 20 - (L.length > rows ? 8 : 0), 26, () => {INV.sel = i; INV.focus = false}, '');
     X.fillStyle = sel ? 'rgba(193,68,14,.65)' : ov ? 'rgba(255,255,255,.1)' : 'rgba(0,0,0,.25)'; X.fillRect(x + 10, ry, w - 20, 26); if (sel) {X.strokeStyle = '#ffd36b'; X.lineWidth = 1.5; X.strokeRect(x + 10.75, ry + .75, w - 21.5, 24.5)}
-    itemIcon(o.id, x + 15, ry + 3, 1); tx(o.n, x + 40, ry + 18, PAL.cream, 15); if (o.eq) tx('EQUIPPED', x + w - 20, ry + 18, '#7ee08a', 12, F_T, 'right'); else if (o.cnt > 1 || o.type == 'item') tx('x' + o.cnt, x + w - 20, ry + 18, '#ffd36b', 15, F_T, 'right')});
+    itemIcon(o.id, x + 15, ry + 3, 1); tx(o.n, x + 40, ry + 18, PAL.cream, 15); if (o.eq) tx('EQUIPPED', x + w - 20, ry + 18, '#7ee08a', 12, F_T, 'right'); else if (o.cnt > 1 || o.type == 'food') tx('x' + o.cnt, x + w - 20, ry + 18, '#ffd36b', 15, F_T, 'right')});
   if (L.length > rows) {const th = lh * rows / L.length, ty = ly + (lh - th) * INV.scroll / Math.max(1, L.length - rows); rc('rgba(255,255,255,.2)', x + w - 16, ly, 4, lh); rc('#e0b04a', x + w - 16, ty, 4, th)}
   // details of the selected item
   const dy = y + h - 134, o = L[INV.sel]; X.fillStyle = 'rgba(0,0,0,.3)'; X.fillRect(x + 10, dy, w - 20, 124); X.strokeStyle = 'rgba(224,176,74,.5)'; X.lineWidth = 1; X.strokeRect(x + 10.5, dy + .5, w - 21, 123);
@@ -36,29 +38,32 @@ function drawInv() {
     if (o.type == 'weapon') {const it = ITEMS[o.id]; [['STR', it.str], ['WT', it.wt], ['SHP', it.sharp], ['POW', it.pow]].forEach(([n, v], i) => {const bx = x + 18 + (i % 2) * ((w - 36) / 2), by = dy + 62 + (i >> 1) * 14; tx(n, bx, by + 7, '#bfe6f5', 12); bar(bx + 28, by, (w - 36) / 2 - 38, v, 12, i % 2 ? '#e0b04a' : '#e63946', 6)});
       it.moves.forEach((m, i) => {const my = dy + 98 + i * 11, ov2 = hit(x + 14, my - 9, w - 28, 11, null, m.n + ': ' + moveTip(m)); tx(m.n, x + 18, my, ov2 ? '#fff' : '#bfa57a', 12); tx(m.k.toUpperCase(), x + w - 20, my, m.k == 'pow' ? '#ff9a6a' : m.k == 'sharp' ? '#7ec8ff' : '#c9a0ff', 11, F_T, 'right')});
       if (!o.eq) btn(x + w - 82, dy + 6, 66, 20, 'Equip', () => equip(o.id), 'Equip this weapon (Enter)', '#1f6f4a', 14)}
-    else if (o.id == 'chai') btn(x + 18, dy + 70, 90, 24, 'Drink chai', () => quickHeal(), 'Heal 30 HP (Q)', '#1f6f4a', 14)}
-  const z = INV.drag || invZone(MOUSE.x, MOUSE.y), hl = z ? '#fff' : '#ffd36b'; if (z) {X.fillStyle = 'rgba(255,255,255,.18)'; if (z.w) X.fillRect(x + w - 4, y, 8, h); if (z.h) X.fillRect(x, y + h - 4, w, 8)}
+    else if (o.use) btn(x + 18, dy + 70, 110, 24, o.use, () => useItem(o), o.desc, '#1f6f4a', 14)}
+  const z = INV.drag || invZone(MOUSE.x, MOUSE.y), hl = z ? '#fff' : '#ffd36b'; if (z) {X.fillStyle = 'rgba(255,255,255,.22)'; if (z.r) X.fillRect(x + w - 3, y, 6, h); if (z.l) X.fillRect(x - 3, y, 6, h); if (z.b) X.fillRect(x, y + h - 3, w, 6); if (z.t) X.fillRect(x, y - 3, w, 6)}
+  X.fillStyle = z ? 'rgba(255,255,255,.35)' : 'rgba(224,176,74,.4)'; X.beginPath(); X.moveTo(x + w - 3, y + h - 22); X.lineTo(x + w - 3, y + h - 3); X.lineTo(x + w - 22, y + h - 3); X.closePath(); X.fill();
   X.strokeStyle = hl; X.lineWidth = 2; X.beginPath(); for (let k = 1; k <= 3; k++) {X.moveTo(x + w - 4 * k - 3, y + h - 3); X.lineTo(x + w - 3, y + h - 4 * k - 3)} X.stroke()}
 // resize zones of the bag: right edge, bottom edge, or the corner (bigger on touch screens)
-function invZone(mx, my) {if (!INV || !INV.rect) return null; const {x, y, w, h} = INV.rect, b = IS_TOUCH ? 14 : 8, c = IS_TOUCH ? 26 : 18;
-  const nr = mx > x + w - b && mx < x + w + b && my > y && my < y + h + b, nb = my > y + h - b && my < y + h + b && mx > x && mx < x + w + b, co = mx > x + w - c && my > y + h - c && mx < x + w + b && my < y + h + b;
-  if (co || (nr && nb)) return {w: 1, h: 1}; if (nr) return {w: 1, h: 0}; if (nb) return {w: 0, h: 1}; return null}
-function invDragMove() {const d = INV && INV.drag; if (!d) return; if (d.w) INV.w = Math.max(190, Math.min(LW - 12, d.sw + MOUSE.x - d.mx)); if (d.h) INV.h = Math.max(280, Math.min(LH - 12, d.sh + MOUSE.y - d.my))}
-function invDragEnd() {if (INV && INV.drag) {INV.drag = null; SET.bagW = Math.round(INV.w); SET.bagH = Math.round(INV.h); saveSettings()}}
+function invZone(mx, my) {if (!INV || !INV.rect) return null; const {x, y, w, h} = INV.rect, b = IS_TOUCH ? 16 : 10, hdr = mx > x + b && mx < x + w - b && my > y + b && my < y + 36 && !(mx > x + 54 && mx < x + 108) && !(mx > x + w - 34), nr = (v, e) => Math.abs(v - e) <= b, inY = my > y - b && my < y + h + b, inX = mx > x - b && mx < x + w + b;
+  const z = {l: nr(mx, x) && inY, r: nr(mx, x + w) && inY, t: nr(my, y) && inX, b: nr(my, y + h) && inX}; if (z.l || z.r || z.t || z.b) return z; return hdr ? {mv: true} : null}
+function invDragMove() {const d = INV && INV.drag; if (!d) return; if (d.mv) {INV.x = Math.max(0, Math.min(LW - INV.w, d.sx + MOUSE.x - d.mx)); INV.y = Math.max(0, Math.min(LH - INV.h, d.sy + MOUSE.y - d.my)); return} const dx = MOUSE.x - d.mx, dy = MOUSE.y - d.my, MW = Math.min(190, LW - 12), MH = Math.min(270, LH - 12); let x = d.sx, y = d.sy, w = d.sw, h = d.sh;
+  if (d.r) w = Math.max(MW, Math.min(LW - x, d.sw + dx)); if (d.b) h = Math.max(MH, Math.min(LH - y, d.sh + dy));
+  if (d.l) {const nx = Math.max(0, Math.min(d.sx + d.sw - MW, d.sx + dx)); w = d.sx + d.sw - nx; x = nx} if (d.t) {const ny = Math.max(0, Math.min(d.sy + d.sh - MH, d.sy + dy)); h = d.sy + d.sh - ny; y = ny}
+  INV.x = x; INV.y = y; INV.w = w; INV.h = h}
+function invDragEnd() {if (INV && INV.drag) {INV.drag = null; SET.bag = {x: Math.round(INV.x), y: Math.round(INV.y), w: Math.round(INV.w), h: Math.round(INV.h)}; saveSettings()}}
 function invKey(e) {
   const L = bagList(INV.q);
-  if (INV.focus) {if (e.key == 'Escape' || e.key == 'Enter') INV.focus = false; else if (e.key == 'Backspace') INV.q = INV.q.slice(0, -1); else if (e.key.length == 1 && INV.q.length < 18) {INV.q += e.key; INV.sel = 0; INV.scroll = 0} return}
+  if (INV.focus) {if (e.key == 'Enter' && INV.q.trim().toUpperCase() == 'UNLOCK') {devUnlock(); INV.q = ''; INV.focus = false} else if (e.key == 'Escape' || e.key == 'Enter') INV.focus = false; else if (e.key == 'Backspace') INV.q = INV.q.slice(0, -1); else if (e.key.length == 1 && INV.q.length < 18) {INV.q += e.key; INV.sel = 0; INV.scroll = 0} return}
   if (e.key == 'e' || e.key == 'Escape') INV = null; else if (e.key == '/') INV.focus = true;
   else if (e.key == 'ArrowUp' || e.key == 'w') INV.sel = Math.max(0, INV.sel - 1); else if (e.key == 'ArrowDown' || e.key == 's') INV.sel = Math.min(L.length - 1, INV.sel + 1);
-  else if (e.key == ' ' || e.key == 'Enter') {const o = L[INV.sel]; if (o && o.type == 'weapon') equip(o.id); else if (o && o.id == 'chai') quickHeal()}}
+  else if (e.key == ' ' || e.key == 'Enter') {const o = L[INV.sel]; if (o && o.type == 'weapon') equip(o.id); else if (o) useItem(o)}}
 // ---------- stats ----------
 function drawSheet() {
   uiModal(); panel(() => {ibox(30, 16, 420, 320); plate(240, 2, 'Character', 16); closeBtn(424, 26, () => {PNL = null});
-    X.fillStyle = 'rgba(255,200,120,.12)'; X.fillRect(50, 50, 132, 150); X.strokeStyle = PAL.gold; X.strokeRect(50.5, 50.5, 131, 149); drawChar(54, 60, LOOKS[S.look], 'down', 0, 4); tx(S.name, 116, 224, '#ffd36b', 17, F_R, 'center');
+    X.fillStyle = 'rgba(255,200,120,.12)'; X.fillRect(50, 50, 132, 150); X.strokeStyle = PAL.gold; X.strokeRect(50.5, 50.5, 131, 149); drawChar(54, 60, myLook(), 'down', 0, 4); tx(S.name, 116, 224, '#ffd36b', 17, F_R, 'center');
     const done = doneCount(), bosses = ORDER.filter(c => S.flags['boss_' + c]).length, chests = Object.keys(S.flags).filter(k => k.startsWith('ch_')).length, ep = it => ITEMS[S.eq][it];
     const rows = [['Level', S.lv], ['HP', S.hp + ' / ' + S.maxhp], ['XP', S.xp + ' / ' + S.lv * 25], ['Money', 'Rs.' + S.money], ['Chai', 'x' + S.chai], ['Weapon', ITEMS[S.eq].n], ['Missions done', done], ['Bosses beaten', bosses], ['Chests opened', chests], ['Street cred', bosses * 50 + done * 20]];
-    rows.forEach(([a, b], i) => {const y = 72 + i * 25; tx(a, 214, y, '#c9b79a', 15); tx(String(b), 428, y, PAL.cream, 16, F_T, 'right'); rc('rgba(224,176,74,.25)', 214, y + 6, 214, 1)});
-    bar(214, 330 - 52, 214, S.xp, S.lv * 25, '#e0b04a', 8); tx('Next level: full HP and +10 max HP', 321, 330 - 28, '#7ee08a', 13, F_T, 'center'); tx('Gang strength +' + tierOf() + '  (enemies get stronger as you progress)', 240, 320, '#ffb88a', 13, F_T, 'center')}, 480, 352)}
+    rows.forEach(([a, b], i) => {const y = 68 + i * 22; tx(a, 214, y, '#c9b79a', 14); tx(String(b), 428, y, PAL.cream, 15, F_T, 'right'); rc('rgba(224,176,74,.25)', 214, y + 5, 214, 1)});
+    bar(214, 292, 214, S.xp, S.lv * 25, '#e0b04a', 8); tx('Next level: full HP, +10 max HP', 321, 314, '#7ee08a', 12, F_T, 'center'); tx('Gang strength +' + tierOf() + '  (enemies grow as you progress)', 240, 330, '#ffb88a', 12, F_T, 'center')}, 480, 352)}
 // ---------- journal: only your current tasks, no spoilers ----------
 let JRopen = false;
 function drawJour() {
@@ -110,9 +115,6 @@ function drawMapP() {
   if (hover) {const t = hover.n + (hover.k ? '  -  ' + KIND_NAME[hover.k] : ''), w = tw(t, 14) + 18, bx = Math.max(10, Math.min(LW - w - 10, hover.px - w / 2)), by = Math.max(top + 4, hover.py - 38); ibox(bx, by, w, 22, {a: .92, plain: 1}); tx(t, bx + w / 2, by + 16, '#fff3d6', 14, F_T, 'center')}
   tx('Map - ' + d.name, 14, 24, '#ffd36b', 17, F_R); closeBtn(LW - 28, 8, () => {PNL = null});
   btn(LW - 118, 6, 24, 22, '+', () => {MAP.z = Math.min(5, MAP.z * 1.4)}, 'Zoom in (+)', '#7a1022', 18); btn(LW - 90, 6, 24, 22, '-', () => {MAP.z = Math.max(.8, MAP.z / 1.4)}, 'Zoom out (-)', '#7a1022', 18); btn(LW - 62, 6, 28, 22, '1:1', () => {MAP.z = 1}, 'Reset', '#7a1022', 12);
-  // legend
-  let lx = 14; const ly = LH - 22; ['h', 't', 'm', 'x', 'g', 'j', 'b'].forEach(k => {placeGlyph(k, lx + 8, ly, 8); tx(KIND_SHORT[k], lx + 20, ly + 4, '#e8dcc0', 12, F_T); lx += 28 + tw(KIND_SHORT[k], 12)});
-  X.fillStyle = '#ffd36b'; X.beginPath(); X.arc(lx + 8, ly, 8, 0, 7); X.fill(); X.fillStyle = '#3a1a00'; X.fillRect(lx + 7, ly - 5, 2, 6); X.fillRect(lx + 7, ly + 3, 2, 2); tx('Mission', lx + 20, ly + 4, '#e8dcc0', 12); lx += 70; X.fillStyle = '#ff3b3b'; X.beginPath(); X.arc(lx + 8, ly, 6, 0, 7); X.fill(); tx('You', lx + 20, ly + 4, '#e8dcc0', 12);
   tx('Drag to move   Wheel to zoom   M / Esc to close', LW / 2, LH - 6, '#8a7a64', 11, F_T, 'center')}
 // ---------- guide ----------
 const GUIDE_TABS = ['Controls', 'Battle', 'Weapons', 'Enemies', 'Missions', 'Places', 'Map and Journal', 'Music and Menu'];
@@ -148,7 +150,7 @@ const GUIDE_PAGES = [
     tx('Music', x, yy + 24, '#ffd36b', 15, F_R); bar(x + 60, yy + 17, 200, SET.mus, 1, '#e0b04a', 8); tx('Effects', x, yy + 46, '#ffd36b', 15, F_R); bar(x + 60, yy + 39, 200, SET.sfx, 1, '#7ec8ff', 8); return yy - y + 60}];
 function drawGuide() {
   uiModal(); panel(() => {ibox(10, 8, 460, 336); plate(240, -6, 'Guide', 16); closeBtn(442, 14, () => {PNL = null});
-    GUIDE_TABS.forEach((n, i) => {const y = 40 + i * 33, sel = GD.tab == i, ov = hit(20, y, 110, 28, () => {GD.tab = i; GD.sc = 0}, ''); X.fillStyle = sel ? '#c1440e' : ov ? '#8a1c30' : 'rgba(0,0,0,.35)'; X.fillRect(20, y, 110, 28); X.strokeStyle = sel ? '#ffd36b' : '#6b4a2a'; X.lineWidth = 1.5; X.strokeRect(20.75, y + .75, 108.5, 26.5); tx(n, 75, y + 19, PAL.cream, 14, F_T, 'center')});
+    GUIDE_TABS.forEach((n, i) => {const y = 38 + i * 25, sel = GD.tab == i, ov = hit(20, y, 112, 22, () => {GD.tab = i; GD.sc = 0}, ''); X.fillStyle = sel ? '#c1440e' : ov ? '#8a1c30' : 'rgba(0,0,0,.35)'; X.fillRect(20, y, 112, 22); X.strokeStyle = sel ? '#ffd36b' : '#6b4a2a'; X.lineWidth = 1.5; X.strokeRect(20.75, y + .75, 110.5, 20.5); tx(n, 76, y + 16, PAL.cream, 13, F_T, 'center')});
     X.fillStyle = 'rgba(0,0,0,.28)'; X.fillRect(140, 38, 318, 296); X.strokeStyle = 'rgba(224,176,74,.5)'; X.strokeRect(140.5, 38.5, 317, 295);
     X.save(); X.beginPath(); X.rect(141, 39, 316, 294); X.clip(); const hh = GUIDE_PAGES[GD.tab](150, 46 - (GD.sc || 0)); X.restore(); GD.max = Math.max(0, hh - 270);
     if (GD.max > 0) {const th = 294 * 270 / (270 + GD.max); rc('rgba(255,255,255,.18)', 452, 40, 4, 292); rc('#e0b04a', 452, 40 + (292 - th) * (GD.sc / GD.max), 4, th); tx('scroll for more', 300, 332, '#9c8a74', 11, F_T, 'center')}}, 480, 352)}
@@ -171,4 +173,3 @@ function drawMenu() {
         if (i == 1) tx(val, 318, y + 19, '#ffd36b', 15, F_T, 'center'); else {const v = i == 2 ? SET.mus : SET.sfx; hit(270, y + 6, 96, 16, () => {const f = Math.max(0, Math.min(1, (MOUSE.x - UT.ox - 270 * UT.s) / (96 * UT.s))); setVol(i == 2 ? 'mus' : 'sfx', f)}, 'Click to set the volume'); bar(270, y + 10, 96, v, 1, i == 2 ? '#e0b04a' : '#7ec8ff', 8); tx(Math.round(v * 100) + '%', 318, y + 8, '#ffd36b', 10, F_T, 'center')}}
       else if (val) tx(val, 380, y + 19, SET.musOn || i != 4 ? '#7ee08a' : '#ff8a6a', 15, F_T, 'right')});
     tx('Up / Down: choose   Left / Right: change   Enter: select', 240, 322, '#9c8a74', 12, F_T, 'center')}, 480, 352)}
-

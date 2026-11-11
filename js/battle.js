@@ -91,17 +91,16 @@ function drawBattleBG(kind, t) {
   for (let i = 0; i < 22; i++) {const x = (i * 71 + t * (.1 + (i % 3) * .05)) % 500 - 10, y = 80 + ((i * 53) % 150) + Math.sin(t / 40 + i) * 8, a = .25 + Math.sin(t / 25 + i) * .15; X.fillStyle = 'rgba(255,214,140,' + a + ')'; X.fillRect(x, y, 1.6, 1.6)}
   X.globalCompositeOperation = 'source-over';
   // marigold garlands across the top corners
-  [[0, 0, 150, 24], [480, 0, 330, 24]].forEach(([x1, y1, x2, y2], gi) => {for (let i = 0; i <= 26; i++) {const u = i / 26, x = x1 + (x2 - x1) * u, y = y1 + (y2 - y1) * u * u * .6 + Math.sin(u * 3.14) * 14 + Math.sin(t / 30 + i * .5 + gi) * 1.5; X.fillStyle = i % 3 == 0 ? '#e63946' : i % 3 == 1 ? '#ff9933' : '#f2c94c'; X.beginPath(); X.arc(x, y, 3, 0, 7); X.fill()}});
   // nostalgic finish: warm tint, vignette, film grain
   X.fillStyle = 'rgba(255,150,70,.07)'; X.fillRect(0, 0, 480, 236); const vg = X.createRadialGradient(240, 118, 90, 240, 118, 290); vg.addColorStop(0, 'rgba(20,5,25,0)'); vg.addColorStop(1, 'rgba(20,5,25,.6)'); X.fillStyle = vg; X.fillRect(0, 0, 480, 236);
   for (let i = 0; i < 70; i++) {X.fillStyle = Math.random() < .5 ? 'rgba(255,255,255,.09)' : 'rgba(0,0,0,.1)'; X.fillRect(Math.random() * 480, Math.random() * 236, 1, 1)}}
 // ---------- battle screen ----------
 const BCOL = {pow: '#c1440e', sharp: '#1f6f9a', heavy: '#7b2cbf'};
-function bagBattle() {return bagList('').filter(o => o.type == 'weapon' || o.id == 'chai')}
+function bagBattle() {return bagList('').filter(o => o.type == 'weapon' || o.id == 'chai' || (o.type == 'food' && o.heal > 0))}
 function drawBattle() {
   rc('#12060c', 0, 0, LW, LH); hit(0, 0, LW, LH, null);
   panel(() => {
-    const t = tick, kind = cityOf() == 'sec' ? 'sec' : 'hyd', now = performance.now(), F = B.F, boss = !!F.boss;
+    const t = tick, kind = cityOf() == 'sec' ? 'sec' : cityOf() == 'hit' ? 'hit' : 'hyd', now = performance.now(), F = B.F, boss = !!F.boss;
     if (B.shake > .5) {X.translate(R(-B.shake, B.shake) * .5, R(-B.shake, B.shake) * .4); B.shake *= .86}
     X.save(); X.beginPath(); X.rect(0, 0, 480, 236); X.clip(); drawBattleBG(kind, t);
     B.dh += (B.hp - B.dh) * .12; B.pd = B.pd == null ? S.hp : B.pd + (S.hp - B.pd) * .12;
@@ -112,26 +111,26 @@ function drawBattle() {
     X.fillStyle = 'rgba(0,0,0,.35)'; X.beginPath(); X.ellipse(368, 162, 34 * (boss ? 1.15 : 1), 7, 0, 0, 7); X.fill(); X.beginPath(); X.ellipse(98, 216, 38, 8, 0, 0, 7); X.fill();
     const hurt = now - B.hitF < 260 && (t >> 1) & 1;
     if (!hurt) {X.save(); X.globalAlpha = 1 - dk; drawChar(368 - 16 * sF + (1 - ease) * 220 - lunge(B.flunge, 46), 160 - 30 * sF + bob + dk * 18, LOOKF[F.look], 'down', 0, sF); X.restore()}
-    const hurtM = now - B.hitM < 260 && (t >> 1) & 1; if (!hurtM) drawChar(98 - 16 * sP - (1 - ease) * 220 + lunge(B.lunge, 60), 216 - 30 * sP - bob * .7, LOOKS[S.look], 'up', 0, sP);
+    const hurtM = now - B.hitM < 260 && (t >> 1) & 1; if (!hurtM) drawChar(98 - 16 * sP - (1 - ease) * 220 + lunge(B.lunge, 60), 216 - 30 * sP - bob * .7, myLook(), 'up', 0, sP);
     drawParts(); B.ft = B.ft.filter(f => f.l > 0); B.ft.forEach(f => {f.l--; f.y -= .7; X.globalAlpha = Math.min(1, f.l / 16); tx(String(f.t), f.x, f.y, f.c, 26, F_R, 'center'); X.globalAlpha = 1});
     if (B.flash > 0) {X.fillStyle = 'rgba(255,255,255,' + B.flash / 14 + ')'; X.fillRect(0, 0, 480, 236); B.flash--}
     X.restore();
     // scalloped Indian arch border on the scene
-    X.fillStyle = '#4a0f1a'; X.fillRect(0, 0, 480, 5); for (let x = 4; x < 480; x += 16) {X.fillStyle = '#4a0f1a'; X.beginPath(); X.arc(x + 4, 4, 8, 0, Math.PI); X.fill(); X.strokeStyle = PAL.gold; X.lineWidth = 1.2; X.beginPath(); X.arc(x + 4, 4, 8, 0, Math.PI); X.stroke()}
-    X.strokeStyle = PAL.gold; X.lineWidth = 3; X.strokeRect(1.5, 1.5, 477, 233); for (const [cx, cy] of [[4, 4], [476, 4], [4, 232], [476, 232]]) {diamond(cx, cy, 8, PAL.gold); diamond(cx, cy, 4, '#c1121f')}
+    X.strokeStyle = 'rgba(150,175,230,.65)'; X.lineWidth = 2; X.strokeRect(1, 1, 478, 234);
+
     // name plates
     ibox(10, 14, 214, 58, {a: .82}); tx(F.n, 22, 36, '#ffd36b', 16, F_R); tx(boss ? 'BOSS' : 'Lv ' + B.lv, 214, 36, boss ? '#ff6a5a' : PAL.cream, 15, F_T, 'right');
-    bar(22, 44, 190, B.dh, B.max, B.dh < B.max * .3 ? '#ff7a1a' : '#e63946', 10); tx('HP ' + Math.max(0, Math.round(B.hp)) + '/' + B.max, 212, 66, PAL.cream, 12, F_T, 'right');
+    bar(22, 44, 190, B.hp <= 0 ? 0 : B.dh, B.max, B.dh < B.max * .3 ? '#ff7a1a' : '#e63946', 10); tx('HP ' + Math.max(0, Math.round(B.hp)) + '/' + B.max, 212, 66, PAL.cream, 12, F_T, 'right');
     ibox(262, 174, 208, 58, {a: .86}); tx(S.name, 274, 194, '#ffd36b', 16, F_R); tx('Lv ' + S.lv, 462, 194, PAL.cream, 15, F_T, 'right');
     bar(274, 201, 184, B.pd, S.maxhp, S.hp < S.maxhp * .3 ? '#ff7a1a' : '#4ade80', 10); tx('HP ' + Math.max(0, Math.round(S.hp)) + '/' + S.maxhp, 458, 224, PAL.cream, 12, F_T, 'right'); bar(274, 225, 120, S.xp, S.lv * 25, '#e0b04a', 4);
     // command area
     ibox(2, 238, 476, 112, {a: .92}); const it = ITEMS[S.eq], ok = !B.busy && !B.over && !B.bag, specs = [];
-    it.moves.forEach((m, i) => specs.push({n: m.n, sub: m.k.toUpperCase(), c: BCOL[m.k], tip: m.n + ': ' + moveTip(m), act: () => atk(i)}));
+    it.moves.forEach((m, i) => {const mi = moveInfo(m); specs.push({n: m.n, kind: m.k.toUpperCase(), eff: mi.eff, sub: mi.eff.toUpperCase() + '  ' + Math.round(mi.acc * 100) + '%  ' + mi.lo + '-' + mi.hi + ' dmg', c: BCOL[m.k], tip: m.n + ' (' + mi.eff.toUpperCase() + ' vs ' + B.F.n + '): ' + moveTip(m) + ' Accuracy ' + Math.round(mi.acc * 100) + '%, damage ' + mi.lo + '-' + mi.hi + '.', act: () => atk(i)})});
     specs.push({n: 'Chai', sub: 'x' + S.chai + '  +30 HP', c: '#2f8f5a', tip: 'Healing Chai: heals 30 HP. Uses your turn.', act: () => atk(3)});
     specs.push({n: 'Run', sub: boss || F.guard ? 'blocked' : '80%', c: boss || F.guard ? '#555' : '#a07a1a', tip: boss || F.guard ? 'You cannot run from guards or bosses.' : 'Run away: 80% chance. The enemy leaves for 30 seconds and then returns.', act: () => atk(4)});
     specs.push({n: 'Bag', sub: 'weapons / items', c: '#6b4423', tip: 'Open your bag. Switching weapon uses your turn.', act: () => atk(5)});
     specs.forEach((s, i) => {const bx = 10 + (i % 3) * 155, by = 282 + (i / 3 | 0) * 33, ov = ok && hit(bx, by, 148, 29, s.act, s.tip); X.fillStyle = ok ? (ov ? '#fff' : s.c) : '#3a3a3a'; if (ov) {X.fillStyle = s.c; X.fillRect(bx - 1, by - 2, 150, 33)} else X.fillRect(bx, by, 148, 29);
-      X.strokeStyle = ok ? (ov ? '#fff' : PAL.gold) : '#555'; X.lineWidth = 2; X.strokeRect(bx + 1, by + 1, 146, 27); X.fillStyle = 'rgba(255,255,255,.14)'; X.fillRect(bx + 3, by + 3, 142, 4); X.fillStyle = 'rgba(0,0,0,.35)'; X.fillRect(bx + 3, by + 3, 18, 23); tx(String(i + 1), bx + 12, by + 20, '#ffd36b', 16, F_R, 'center', false); tx(s.n, bx + 26, by + 14, ok ? PAL.cream : '#999', 15, F_T, 'left', false); tx(s.sub, bx + 26, by + 25, ok ? 'rgba(255,243,214,.75)' : '#777', 11, F_T, 'left', false)});
+      X.strokeStyle = ok ? (ov ? '#fff' : PAL.gold) : '#555'; X.lineWidth = 2; X.strokeRect(bx + 1, by + 1, 146, 27); X.fillStyle = 'rgba(255,255,255,.14)'; X.fillRect(bx + 3, by + 3, 142, 4); X.fillStyle = 'rgba(0,0,0,.35)'; X.fillRect(bx + 3, by + 3, 18, 23); tx(String(i + 1), bx + 12, by + 20, '#ffd36b', 16, F_R, 'center', false); tx(s.n, bx + 26, by + 14, ok ? PAL.cream : '#999', 15, F_T, 'left', false); if (s.kind) tx(s.kind, bx + 142, by + 13, ok ? 'rgba(255,255,255,.6)' : '#777', 9, F_T, 'right', false); tx(s.sub, bx + 26, by + 25, !ok ? '#777' : s.eff == 'effective' ? '#8dffa0' : s.eff == 'waste' ? '#ff8a7a' : '#ffe9a8', 11, F_T, 'left', false)});
     // message / hover tip
     const msg = ok && TIP ? TIP : B.msg; if (B._m != msg) {B._m = msg; B._mt = tick} const shown = Math.floor((tick - B._mt) * 2.2);
     ibox(10, 241, 460, 36, {a: .0, plain: 1}); const mls = wrapT(msg, 440, 15).slice(0, 2); let mcnt = 0;
@@ -139,9 +138,8 @@ function drawBattle() {
     if (B.bag) drawBagBattle()}, 480, 352, 1.8); drawCredit()}
 function drawBagBattle() {
   const L = bagBattle(); hit(0, 0, 480, 352, () => {B.bag = 0}); ibox(80, 40, 320, 190, {a: .97}); plate(240, 28, 'Bag', 15); tx('Switching weapon uses your turn', 240, 66, '#ffb88a', 13, F_T, 'center');
-  B.bsel = Math.max(0, Math.min(B.bsel, L.length - 1)); L.slice(0, 6).forEach((o, i) => {const y = 74 + i * 26, ov = hit(94, y, 292, 24, () => {if (o.type == 'weapon') switchWeapon(o.id); else drinkChai()}, ''); X.fillStyle = i == B.bsel ? 'rgba(193,68,14,.7)' : ov ? 'rgba(255,255,255,.12)' : 'rgba(0,0,0,.3)'; X.fillRect(94, y, 292, 24); X.strokeStyle = o.eq ? '#7ee08a' : '#6b4a2a'; X.strokeRect(94.5, y + .5, 291, 23); itemIcon(o.id, 98, y + 2, .95); tx(o.n, 124, y + 17, PAL.cream, 15); tx(o.eq ? 'EQUIPPED' : o.type == 'item' ? 'x' + o.cnt : 'Use', 380, y + 17, o.eq ? '#7ee08a' : '#ffd36b', 13, F_T, 'right')});
+  B.bsel = Math.max(0, Math.min(B.bsel, L.length - 1)); L.slice(0, 6).forEach((o, i) => {const y = 74 + i * 26, ov = hit(94, y, 292, 24, () => {if (o.type == 'weapon') switchWeapon(o.id); else eatInBattle(o)}, ''); X.fillStyle = i == B.bsel ? 'rgba(193,68,14,.7)' : ov ? 'rgba(255,255,255,.12)' : 'rgba(0,0,0,.3)'; X.fillRect(94, y, 292, 24); X.strokeStyle = o.eq ? '#7ee08a' : '#6b4a2a'; X.strokeRect(94.5, y + .5, 291, 23); itemIcon(o.id, 98, y + 2, .95); tx(o.n, 124, y + 17, PAL.cream, 15); tx(o.eq ? 'EQUIPPED' : o.type == 'item' ? 'x' + o.cnt : 'Use', 380, y + 17, o.eq ? '#7ee08a' : '#ffd36b', 13, F_T, 'right')});
   btn(180, 204, 120, 20, 'Back', () => {B.bag = 0}, 'Esc', '#4a2a10', 14)}
 function battleKey(k) {
-  if (B.bag) {const L = bagBattle(); if (k == 'Escape' || k == 'b') B.bag = 0; else if (k == 'ArrowUp' || k == 'w') B.bsel = Math.max(0, B.bsel - 1); else if (k == 'ArrowDown' || k == 's') B.bsel = Math.min(L.length - 1, B.bsel + 1); else if (k == 'Enter' || k == ' ') {const o = L[B.bsel]; if (o) o.type == 'weapon' ? switchWeapon(o.id) : drinkChai()} return}
+  if (B.bag) {const L = bagBattle(); if (k == 'Escape' || k == 'b') B.bag = 0; else if (k == 'ArrowUp' || k == 'w') B.bsel = Math.max(0, B.bsel - 1); else if (k == 'ArrowDown' || k == 's') B.bsel = Math.min(L.length - 1, B.bsel + 1); else if (k == 'Enter' || k == ' ') {const o = L[B.bsel]; if (o) o.type == 'weapon' ? switchWeapon(o.id) : eatInBattle(o)} return}
   if (/^[1-6]$/.test(k)) atk(+k - 1); else if (k == 'r') atk(4); else if (k == 'q') atk(3); else if (k == 'b') atk(5)}
-

@@ -10,7 +10,7 @@ const vec = {up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0]};
 const dirs = {ArrowUp: 'up', w: 'up', ArrowDown: 'down', s: 'down', ArrowLeft: 'left', a: 'left', ArrowRight: 'right', d: 'right'};
 const rc = (c, x, y, w, h) => {X.fillStyle = c; X.fillRect(Math.round(x), Math.round(y), w, h)};
 const GONE = {};                                                    // enemies that ran away / were beaten: 'map:slot' -> frames until they return
-const MAPS = {hyd: genMap('hyd', CFG.hyd), sec: genMap('sec', CFG.sec)};
+const MAPS = {hyd: genMap('hyd', CFG.hyd), sec: genMap('sec', CFG.sec), hit: genMap('hit', CFG.hit)};
 function getMap(id) {
   if (cache[id]) return cache[id]; const d = MAPS[id];
   if (d.G) {if (S && S.flags['gate_' + id] && d.gate) d.G[d.gate[1]][d.gate[0]].s = 0; return cache[id] = {d, g: d.G}}
@@ -23,25 +23,26 @@ const cityOf = () => S.map.startsWith('in_') ? S.ret.map : S.map;
 function ensureMap(id) {if (MAPS[id]) return; const [, m, i] = id.split('_'); MAPS[id] = makeInterior(MAPS[m].blds[+i], m, +i)}
 function free(x, y, self) {
   const m = cur(); if (x < 0 || y < 0 || x >= m.d.w || y >= m.d.h) return false; const c = m.g[y][x];
-  if (c.s && !(!self && S.swim && c.t == 5)) return false;
-  if (S.x == x && S.y == y && self) return false; return !ents.some(e => e !== self && e.x == x && e.y == y)}
+  if (c.s && !(!self && S.swim && c.t == 5)) return false; if (self && c.dr && self.t != 'boss') return false;
+  if (S.x == x && S.y == y && self) return false; return !ents.some(e => e !== self && e.x == x && e.y == y && (self || !(e.t == 'npc' || e.t == 'an')))}
 // ---------- difficulty scaling: enemies grow with your story progress ----------
 const doneCount = () => Object.keys(QUESTS).filter(k => S.flags[k] == 'done').length;
 const cityIdx = () => Math.max(0, ORDER.indexOf(cityOf()));
-const tierOf = () => S ? doneCount() + cityIdx() * 2 + ORDER.filter(c => S.flags['boss_' + c]).length : 0;
+const tierOf = () => S ? doneCount() + cityRank() * 2 + Math.floor(S.lv / 12) + ORDER.filter(c => S.flags['boss_' + c]).length : 0;
 function foeStats(e) {
   const F = FOES[e.f], t = tierOf(), m = e.m || 1;
   if (F.boss) return {lv: F.lv || (cityIdx() * 6 + 8), hp: F.hp, atk: F.atk, xp: F.xp, coin: F.coin};
-  return {lv: F.lv + t, hp: Math.round(F.hp * (1 + .12 * t) * m), atk: F.atk * (1 + .07 * t) * (1 + (m - 1) * .5), xp: F.xp * (1 + .12 * t), coin: F.coin * (1 + .08 * t)};
+  return {lv: F.lv + t, hp: Math.round(F.hp * (1 + .12 * t) * m), atk: F.atk * (1 + .07 * t) * (1 + (m - 1) * .5), xp: F.xp * (1 + .3 * t), coin: F.coin * (1 + .1 * t)};
 }
 // ---------- entities ----------
 function makeEnts() {
   const d = cur().d; ents = []; const add = o => ents.push(Object.assign({px: o.x, py: o.y, dir: 'down', a: 0, w: R(20, 90) | 0}, o));
   d.npcs.forEach(n => add(Object.assign({t: 'npc', sp: 1 / 20}, n)));
-  d.animals.forEach(a => add({t: 'an', k: a[0], x: a[1], y: a[2], wander: 1, home: [a[1], a[2]], sp: {cow: 1 / 44, goat: 1 / 28, dog: 1 / 24, cat: 1 / 30}[a[0]] || 1 / 30, w: R(60, 240) | 0}));
+  d.animals.forEach((a, ai) => {if (S.tamed && S.tamed[S.map + ':' + ai]) return; add({t: 'an', slot: ai, k: a[0], x: a[1], y: a[2], wander: 1, home: [a[1], a[2]], sp: {cow: 1 / 44, goat: 1 / 28, dog: 1 / 24, cat: 1 / 30}[a[0]] || 1 / 30, w: R(60, 240) | 0})});
   d.foes.forEach((f, i) => {if (!GONE[S.map + ':' + i]) add({t: 'foe', f: f[3], m: f[2], x: f[0], y: f[1], wander: 1, slot: i})});
   (d.guards || []).forEach((gd, i) => {if (!S.flags['g_' + S.map + '_' + i]) add({t: 'foe', f: gd[2], m: 1.15, x: gd[0], y: gd[1], guard: i})});
   if (d.boss && !S.flags['boss_' + S.map]) add({t: 'boss', f: d.bossKey, x: d.boss[0], y: d.boss[1]});
+  (S.followers || []).forEach((fo, i) => {const q = [[0, 1], [1, 0], [-1, 0], [0, -1], [1, 1], [-1, 1]].map(o => [S.x + o[0], S.y + o[1]]).find(q => free(q[0], q[1])); if (q) add({t: 'an', fi: i, k: fo.k, x: q[0], y: q[1], fol: 1, sp: 1 / 13, w: 5, home: [q[0], q[1]]})});
   (d.autos || []).forEach((a, i) => add({t: 'auto', x: a[0], y: a[1], dir: i % 2 ? 'left' : 'right', sp: 1 / 17, seed: i * 37, path: [], wait: 0, rest: R(20, 200) | 0}));
 }
 function toast(t) {toastS = t; toastT = 170}
@@ -67,7 +68,7 @@ function loadGame(name) {
   cache = {}; if (String(S.map).startsWith('in_')) ensureMap(S.map); if (!MAPS[S.map]) {S.map = 'hyd'; const s = MAPS.hyd.start; S.x = S.px = s[0]; S.y = S.py = s[1]}
   if (S.swim && cur().g[S.y][S.x].t != 5) S.swim = 0; S.grace = 90; begin(false)}
 function begin(isNew) {
-  $('title').style.display = 'none'; makeEnts(); reveal(); toast(cur().d.name); save();
+  ensureS(); $('title').style.display = 'none'; makeEnts(); reveal(); toast(cur().d.name); save();
   if (isNew || !S.flags.tut) setTimeout(startTutorial, 500)}
 function startTutorial() {
   const n = S.name; say([
@@ -82,7 +83,7 @@ function startTutorial() {
   ], () => {S.flags.tut = 1; save()}, 'Welcome', null)}
 // ---------- fog of war ----------
 function reveal() {const d = cur().d; if (d.indoor) return; const bw = Math.ceil(d.w / 4), a = S.seen[S.map] || (S.seen[S.map] = new Array(bw * Math.ceil(d.h / 4)).fill(0));
-  const hx = VW / 2 + 1, hy = VH / 2 + 1; for (let by = Math.max(0, (S.y - hy) / 4 | 0); by <= Math.min(Math.ceil(d.h / 4) - 1, (S.y + hy) / 4 | 0); by++) for (let bx = Math.max(0, (S.x - hx) / 4 | 0); bx <= Math.min(bw - 1, (S.x + hx) / 4 | 0); bx++) a[by * bw + bx] = 1}
+  const hx = VW / 2 + 1, hy = VH / 2 + 1; for (let by = Math.max(0, (S.y - hy) / 4 | 0); by <= Math.min(Math.ceil(d.h / 4) - 1, (S.y + hy) / 4 | 0); by++) for (let bx = Math.max(0, (S.x - hx) / 4 | 0); bx <= Math.min(bw - 1, (S.x + hx) / 4 | 0); bx++) {const lb = d.lairBox; if (lb && !lairKnown(S.map) && !S.flags['gate_' + S.map] && bx * 4 + 3 >= lb[0] && bx * 4 <= lb[2] && by * 4 + 3 >= lb[1] && by * 4 <= lb[3]) continue; a[by * bw + bx] = 1}}
 // ---------- quests / puzzles ----------
 const pcN = id => S.flags['pc_' + id + '_n'] || 0, lairKnown = id => pcN(id) >= 3, digit = (id, i) => i < 3 && S.flags['dg_' + id + '_' + i] ? MAPS[id].cfg.code[i] : '?';
 function giveDigit(id, i) {S.flags['dg_' + id + '_' + i] = 1}
@@ -92,8 +93,9 @@ function finishQuest(id) {
   if (r.money) S.money += r.money; if (r.chai) S.chai += r.chai; if (r.digit != null) giveDigit(S.map, r.digit); if (r.xp) gainXP(r.xp);
   toast('Mission complete: ' + Q.title + (r.item ? ' + ' + ITEMS[r.item].n : '') + (r.digit != null ? '  (lock digit learned!)' : '') + '  Enemies grow stronger...'); save()}
 function gainXP(n) {S.xp += Math.round(n); while (S.xp >= S.lv * 25) {S.xp -= S.lv * 25; S.lv++; S.maxhp += 10; S.hp = S.maxhp; sfx('level'); toast('LEVEL UP! Lv' + S.lv + '  Max HP +10, HP fully restored!')}}
-function askRiddle(id) {const Q = QUESTS[id]; CHO = {q: Q.q, opts: Q.opts, cb: i => {CHO = null; if (i == Q.ans) {S.flags[id] = 'found'; say(Q.turnin, () => finishQuest(id), 'Pandit / Keeper', null)} else {sfx('wrong'); say(['Wrong answer! Think again, bhai.'])}}}}
+function askRiddle(id) {const Q = QUESTS[id]; CHO = {q: Q.q, opts: Q.opts, cb: i => {CHO = null; if (i == Q.ans) {S.flags[id] = 'found'; say(Q.turnin, () => finishQuest(id), 'Pandit / Keeper', null)} else {showErr('WRONG ANSWER!', 'Think again, bhai.')}}}}
 function talk(e) {
+  if (e.game) return openGames(e); if (e.keyGiver) return keyTalk(e); if (e.cards) return cardsTalk(e);
   if (e.shop) return openShop(e);
   if (e.rude || e.nurse || e.pzhint || !e.q) return say(e.say || ['...'], null, e.name, e.L);
   const f = S.flags, Q = QUESTS[e.q], st = f[e.q], w = (l, cb) => say(l, cb, e.name, e.L);
@@ -106,7 +108,7 @@ function pzPress(i) {
   if (S.flags[key + '_ok']) return say(['It already glows. The puzzle is solved.']);
   const seq = S.flags[key] || (S.flags[key] = []);
   if (seq.includes(i)) return toast(pz.names[i] + ' is already lit.');
-  if (pz.order[seq.length] != i) {S.flags[key] = []; sfx('wrong'); return say(['The ' + pz.names[i] + ' fizzles... all the lights go out! Wrong order.', pz.hint[0]])}
+  if (pz.order[seq.length] != i) {S.flags[key] = []; showErr('INCORRECT ORDER!', 'The ' + pz.names[i] + ' fizzles... everything goes dark. Start again from the first one.'); return}
   seq.push(i); sfx('select'); toast(pz.names[i] + ' activated (' + seq.length + '/' + pz.n + ')');
   if (seq.length == pz.n) {S.flags[key + '_ok'] = 1; giveDigit(id, pz.digit); gainXP(60); S.money += 40; sfx('unlock'); say([pz.ok, '(+60 XP, Rs.40)']); save()}}
 // ---- the hideout lock: 4 digits. Three come from missions; the 4th you must find by trying 0-9 ----
@@ -117,16 +119,17 @@ function gateTry() {const id = S.map; const known = [0, 1, 2].map(i => digit(id,
       if (b.slice(0, 3) == code.slice(0, 3)) {CODE.msg = 'Three tumblers click! Only the last digit is wrong. Try 0-9.'; CODE.buf = code.slice(0, 3)}
       else {CODE.msg = 'The lock stays shut. Wrong code!'; CODE.buf = ''}}}, known, msg: ''}}
 function codeKey(k) {if (k == 'Escape') {CODE = null; return} if (/^[0-9]$/.test(k) && CODE.buf.length < 4) CODE.buf += k; else if (k == 'Backspace') CODE.buf = CODE.buf.slice(0, -1); else if ((k == 'Enter' || k == 'f' || k == ' ') && CODE.buf.length == 4) CODE.cb(CODE.buf)}
-function objective() {const d = cur().d, id = S.map; if (d.indoor) return 'Walk down through the door to leave';
+function objective() {const d = cur().d, id = S.map; if (d.indoor) return d.floors ? (d.floor ? 'Use the lift in the corner to change floors or go down' : 'Use the lift for other floors, or walk down to leave') : 'Walk down through the door to leave';
   const qs = Object.keys(QUESTS).filter(k => QUESTS[k].map == id), f = S.flags;
   for (const k of qs) if (f[k] == 'found') return QUESTS[k].hudBack;
   for (const k of qs) if (f[k] == 'active') return QUESTS[k].hudWait + (QUESTS[k].type == 'kill' ? ' (' + (f[k + '_n'] || 0) + '/' + QUESTS[k].n + ')' : '');
   for (const k of qs) if (!f[k]) return QUESTS[k].hudAsk;
   if (!f['pz_' + id + '_ok']) return 'Solve the puzzle: ' + d.cfg.pz.title;
   if (pcN(id) < 3) return 'Find the torn map pieces (' + pcN(id) + '/3)';
-  if (!f['gate_' + id]) return 'Find ' + d.cfg.lair.name + ' and open the 4-digit lock';
+  if (d.cfg.keyGate && !S.flags.hasKey) return 'Get the Master KEY from CTO Meera';
+  if (!f['gate_' + id]) return 'Find ' + d.cfg.lair.name + (d.cfg.keyGate ? ' and use the Master KEY' : ' and open the lock');
   if (!f['boss_' + id]) return 'Defeat ' + d.bossName;
-  return 'Head east to the next city'}
+  return id == 'hyd' ? 'Choose a city: Secunderabad (east edge) or Hitech City (south edge)' : 'Head east to the next city'}
 // journal: only what you need to do right now. No spoilers.
 function journalData() {const id = cityOf(), qs = Object.keys(QUESTS).filter(k => QUESTS[k].map == id), f = S.flags, act = [], done = [];
   qs.forEach(k => {const Q = QUESTS[k]; if (f[k] == 'done') done.push(Q.title); else if (f[k]) act.push({t: Q.title, s: f[k] == 'found' ? Q.hudBack : Q.hudWait + (Q.type == 'kill' ? ' (' + (f[k + '_n'] || 0) + '/' + Q.n + ')' : '')})});
@@ -134,13 +137,14 @@ function journalData() {const id = cityOf(), qs = Object.keys(QUESTS).filter(k =
   const mains = []; if (!next) {const d = MAPS[id];
     if (!f['pz_' + id + '_ok']) mains.push('Solve the puzzle: ' + d.cfg.pz.title); else done.push(d.cfg.pz.title);
     if (pcN(id) < 3) mains.push('Find the torn map pieces (' + pcN(id) + '/3)'); else done.push('Torn map pieces');
-    if (pcN(id) >= 3 && !f['gate_' + id]) mains.push('Open the lock at ' + d.cfg.lair.name);
+    if (d.cfg.keyGate && pcN(id) >= 3 && !f.hasKey) mains.push('Get the Master KEY from CTO Meera');
+    if (pcN(id) >= 3 && !f['gate_' + id] && (!d.cfg.keyGate || f.hasKey)) mains.push((d.cfg.keyGate ? 'Use the KEY at ' : 'Open the lock at ') + d.cfg.lair.name);
     if (f['gate_' + id] && !f['boss_' + id]) mains.push('Defeat ' + d.cfg.bossName); if (f['boss_' + id]) done.push('Defeat ' + d.cfg.bossName)}
-  return {act, mains, done, clue: [0, 1, 2, 3].map(i => digit(id, i)).join(' '), clues: [0, 1, 2].some(i => digit(id, i) != '?')}}
+  return {act, mains, done, clue: codeShown(id), clues: [0, 1, 2].some(i => digit(id, i) != '?')}}
 function missionMarks() {const d = cur().d, id = S.map, out = []; if (d.indoor) return out; const f = S.flags;
   for (const k in QUESTS) {const Q = QUESTS[k]; if (Q.map != id) continue;
     if (!f[k] || f[k] == 'found' || (f[k] == 'active' && Q.type == 'riddle')) {const n = d.npcs.find(n => n.giver == Q.giver); if (n) out.push([n.x, n.y, Q.title])}
-    else if (f[k] == 'active' && Q.type == 'fetch' && d.spots[Q.spot]) out.push([d.spots[Q.spot][0], d.spots[Q.spot][1], Q.title])}
+    else if (f[k] == 'active' && Q.type == 'fetch' && !Q.inside && d.spots[Q.spot]) out.push([d.spots[Q.spot][0], d.spots[Q.spot][1], Q.title])}
   if (qs3(id) && !f['pz_' + id + '_ok']) (d.pz || []).forEach(p => out.push([p.x, p.y, d.cfg.pz.title]));
   return out}
 const qs3 = id => Object.keys(QUESTS).filter(k => QUESTS[k].map == id).every(k => S.flags[k] == 'done');
@@ -150,7 +154,7 @@ function bagList(q) {
   L.push({id: 'chai', type: 'item', n: CHAI.n, cnt: S.chai, desc: CHAI.desc});
   const pc = pcN(cityOf()); if (pc > 0) L.push({id: 'pieces', type: 'quest', n: 'Torn map pieces', cnt: pc, desc: 'Pieces of a map to the hideout (' + pc + '/3).'});
   for (const k in QUESTS) {const Q = QUESTS[k]; if (Q.type == 'fetch' && S.flags[k] == 'found') L.push({id: 'q_' + k, type: 'quest', n: k == 'tiffin' ? "Raju's Tiffin" : "Babu's Parcel", cnt: 1, desc: 'Return it to its owner.'})}
-  const f = S.flags, cid = cityOf(); if ([0, 1, 2].some(i => digit(cid, i) != '?')) L.push({id: 'notes', type: 'quest', n: 'Lock digit notes', cnt: 1, desc: 'Lock code: ' + [0, 1, 2, 3].map(i => digit(cid, i)).join(' ')});
+  const f = S.flags, cid = cityOf(); if (!MAPS[cid].cfg.keyGate && [0, 1, 2].some(i => digit(cid, i) != '?')) L.push({id: 'notes', type: 'quest', n: 'Lock digit notes', cnt: 1, desc: 'Lock code: ' + codeShown(cid)});
   q = (q || '').trim().toLowerCase(); return q ? L.filter(o => o.n.toLowerCase().includes(q) || o.type.includes(q)) : L}
 function equip(id) {if (!ITEMS[id] || !S.items.includes(id)) return; S.eq = id; sfx('select'); toast('Equipped: ' + ITEMS[id].n); save()}
 function quickHeal() {if (S.chai <= 0) return toast('No chai left!'); if (S.hp >= S.maxhp) return toast('HP is already full'); S.chai--; S.hp = Math.min(S.maxhp, S.hp + CHAI.heal); sfx('heal'); toast('Drank chai. HP ' + S.hp + '/' + S.maxhp); save()}
@@ -163,10 +167,11 @@ function buy(i) {const k = SH.stock[i]; if (!k) return; const p = k == 'chai' ? 
 const STALLTALK = {chai: 'A chai stall. The smell of cardamom fills the air.', bangle: 'Glass bangles in every colour, shining in the light.', flower: 'Fresh marigold and jasmine garlands for the temple.', puri: 'Pani puri! Crunchy, tangy and spicy.', fruit: 'Juicy mangoes, bananas and sweet limes.', balloon: 'A balloon seller. The kids love him.', kite: 'Colourful kites. Sankranti is not far away!', toy: 'Wooden toys and spinning tops for children.'};
 function interact() {
   const [dx, dy] = vec[S.dir], fx = S.x + dx, fy = S.y + dy, m = cur(), d = m.d;
+  if (interactX(fx, fy, d)) return;
   const e = ents.find(e => e.x == fx && e.y == fy);
   if (e) {if (e.t == 'npc') {e.dir = ({up: 'down', down: 'up', left: 'right', right: 'left'})[S.dir]; return talk(e)}
-    if (e.t == 'an') return say([ANIMAL_TALK[e.k]]);
-    if (e.t == 'auto') {sfx('honk'); return say(['Beep beep! Meter is down, bhai. I am just roaming the city today.'], null, 'Auto Driver', {f: 0, skin: '#a9713a', hair: '#111', hs: 'crop', top: '#c9b36a', bot: '#444', cap: '#c9b36a', stache: 1})}
+    if (e.t == 'an') return petTalk(e);
+    if (e.t == 'auto') return autoTalk(e);
     if (e.t == 'boss') return say(d.bossIntro, () => startBattle(e), d.bossName, LOOKF[FOES[e.f].look]); return}
   const pi = (d.pz || []).findIndex(p => p.x == fx && p.y == fy); if (pi >= 0) return pzPress(pi);
   if (d.gate && d.gate[0] == fx && d.gate[1] == fy && !S.flags['gate_' + S.map]) return gateTry();
@@ -174,34 +179,41 @@ function interact() {
   const st = (d.stalls || []).find(s => s[0] == fx && s[1] == fy); if (st) return say([STALLTALK[st[2]] || 'A little shop.'], null, 'Stall');
   const c = m.g[fy] && m.g[fy][fx];
   if (c && c.s == 3) return say(['A glowing street lamp.']); if (c && c.wl) return say(['A thick stone wall of the old fort.']); if (c && c.gate) return gateTry();
+  if (c && c.t == 5 && c.s && !S.swim && S.rod) return fishOrSwim(fx, fy);
   if (c && c.t == 5 && c.s && !S.swim) {S.swim = 1; if (free(fx, fy)) {S.x = fx; S.y = fy; sfx('splash'); toast('Swimming! Walk to the shore to climb out.')} else S.swim = 0}}
 // ---------- movement ----------
 function changeMap(to, x, y) {fade = 40; S.map = to; S.x = S.px = x; S.y = S.py = y; S.grace = 70; S.swim = 0; makeEnts(); reveal(); toast(MAPS[to].name); save()}
-function enter(bi) {const id = 'in_' + S.map + '_' + bi; ensureMap(id); const I = MAPS[id]; S.ret = {map: S.map, x: S.x, y: S.y + 1}; sfx('door'); changeMap(id, I.start[0], I.start[1]);
+function enter(bi) {S.riding = null; const id = 'in_' + S.map + '_' + bi; ensureMap(id); const I = MAPS[id]; S.ret = {map: S.map, x: S.x, y: S.y + 1}; sfx('door'); changeMap(id, I.start[0], I.start[1]);
   if (I.kind == 'hosp') {S.hp = S.maxhp; sfx('heal'); setTimeout(() => toast('The hospital heals you. HP full!'), 60)}
   if (I.kind == 'home') {const o = I.npcs[0]; setTimeout(() => say(o.say, null, o.name, o.L), 450)}}
 function arrive() {
   const d = cur().d; reveal();
   if (S.swim && cur().g[S.y][S.x].t != 5) {S.swim = 0; toast('You climb out of the water.')}
+  if (d.indoor) insideFind();
   if (!d.indoor) {
-    for (const k in QUESTS) {const Q = QUESTS[k]; if (Q.map == S.map && Q.type == 'fetch' && S.flags[k] == 'active') {const s = d.spots[Q.spot]; if (s && S.x == s[0] && S.y == s[1]) {S.flags[k] = 'found'; sfx('coin'); say([Q.found]); save()}}}
+    for (const k in QUESTS) {const Q = QUESTS[k]; if (Q.map == S.map && Q.type == 'fetch' && S.flags[k] == 'active' && !Q.inside) {const s = d.spots[Q.spot]; if (s && S.x == s[0] && S.y == s[1]) {S.flags[k] = 'found'; sfx('coin'); say([Q.found]); save()}}}
     for (let i = 0; i < 3; i++) {const s = d.spots['pc' + i]; if (s && !S.flags['pc_' + S.map + '_' + i] && S.x == s[0] && S.y == s[1]) {S.flags['pc_' + S.map + '_' + i] = 1; const n = S.flags['pc_' + S.map + '_n'] = pcN(S.map) + 1; sfx('coin');
       if (n >= 3) {const l = d.lair; for (let y = l[1] - 8; y <= l[1] + 8; y++) for (let x = l[0] - 14; x <= l[0] + 14; x++) {const bw = Math.ceil(d.w / 4); const a = S.seen[S.map]; if (a && x >= 0 && y >= 0 && x < d.w && y < d.h) a[(y >> 2) * bw + (x >> 2)] = 1}
         say(['You join the three torn pieces...', 'The map reveals ' + d.cfg.lair.name + ', hidden in the forest! It is marked on your map (M).', 'The gate has a 4-digit lock. You know three digits from your missions. The last one you must find by trying 0-9.'])} else toast('Torn map piece found (' + n + '/3)'); save()}}
     d.chests.forEach((c, i) => {if (!S.flags['ch_' + S.map + '_' + i] && S.x == c[0] && S.y == c[1]) {S.flags['ch_' + S.map + '_' + i] = 1; S.money += c[2]; sfx('coin'); toast('Treasure chest! +Rs.' + c[2]); save()}})}
   const ex = d.exits.find(e => e.x == S.x && e.y == S.y);
   if (ex && ex.to == 'RET') {const r = S.ret || {map: 'hyd', x: 50, y: 36}; sfx('door'); return changeMap(r.map, r.x, r.y)}
-  if (ex) {if (!MAPS[ex.to]) return toast('Medchal is not built yet. Coming soon!');
-    const fwd = ORDER.indexOf(ex.to) > ORDER.indexOf(S.map); if (fwd && !S.flags['boss_' + S.map]) {S.dir = ex.side == 'W' ? 'left' : 'right'; S.x = S.px = S.x + (ex.side == 'W' ? -1 : 1); return toast('The road is blocked. Defeat the boss of this city first.')}
-    const e2 = ex.side == 'W' ? MAPS[ex.to].entryW : MAPS[ex.to].entryE; return changeMap(ex.to, e2[0], S.y == d.entryE[1] || S.y == d.entryW[1] ? e2[1] : e2[1] + 1)}
+  if (ex) {if (!MAPS[ex.to]) return toast('Ameerpet is not built yet. Coming soon!');
+    const vert = ex.side == 'N' || ex.side == 'S', back = vert ? (ex.side == 'N' ? -1 : 1) : (ex.side == 'W' ? -1 : 1), bounce = () => {S.dir = vert ? (back < 0 ? 'up' : 'down') : (back < 0 ? 'left' : 'right'); if (vert) S.y = S.py = S.y + back; else S.x = S.px = S.x + back};
+    const fwd = ORDER.indexOf(ex.to) > ORDER.indexOf(S.map); if (fwd && !S.flags['boss_' + S.map] && !S.flags.unlockAll) {bounce(); return toast('The road is blocked. Defeat the boss of this city first.')}
+    if (ex.req && !S.flags['boss_' + ex.req] && !S.flags.unlockAll) {bounce(); return toast('This road opens after you defeat the boss of ' + MAPS[ex.req].name.split(' - ')[0] + '.')}
+    const e2 = ex.side == 'W' ? MAPS[ex.to].entryW : ex.side == 'E' ? MAPS[ex.to].entryE : ex.side == 'N' ? MAPS[ex.to].entryN : MAPS[ex.to].entryS;
+    if (vert) return changeMap(ex.to, e2[0] + (S.x - ex.x0), e2[1]);
+    return changeMap(ex.to, e2[0], S.y == d.entryE[1] || S.y == d.entryW[1] ? e2[1] : e2[1] + 1)}
   const bi = d.blds.findIndex(b => S.x == b[0] + (b[2] >> 1) && S.y == b[1] + b[3] - 1); if (bi >= 0 && !S.swim) enter(bi)}
 // ---------- AI ----------
-const calm = () => !D && !SH && !INV && !MENU && !PNL && !CODE && !CHO;
+const calm = () => !D && !SH && !INV && !MENU && !PNL && !CODE && !CHO && !MOD;
 function entUpdate(e) {
   const sp = e.sp || 1 / 16;
   if (e.px != e.x || e.py != e.y) {e.px += Math.sign(e.x - e.px) * Math.min(sp, Math.abs(e.x - e.px)); e.py += Math.sign(e.y - e.py) * Math.min(sp, Math.abs(e.y - e.py)); e.a++; return}
   if (e.t == 'auto') return autoAI(e);
-  if (e.t == 'foe' && !S.grace && calm() && !S.swim) {const dist = Math.abs(e.x - S.x) + Math.abs(e.y - S.y); if (dist == 1 && S.px == S.x && S.py == S.y) return startBattle(e);
+  if (e.fol) return followAI(e);
+  if (e.t == 'foe' && !S.grace && calm() && !S.swim && charmLeft() <= 0) {const dist = Math.abs(e.x - S.x) + Math.abs(e.y - S.y); if (dist == 1 && S.px == S.x && S.py == S.y) return startBattle(e);
     if (!e.guard && dist < 7 && dist > 1 && Math.random() < .05) {const tx = S.x - e.x, ty = S.y - e.y, dd = Math.abs(tx) > Math.abs(ty) ? (tx > 0 ? 'right' : 'left') : (ty > 0 ? 'down' : 'up'), [ax, ay] = vec[dd]; e.dir = dd; if (free(e.x + ax, e.y + ay, e)) {e.x += ax; e.y += ay} return}}
   if (e.wander && --e.w <= 0) {if (e.t == 'an') return aiAnimal(e); e.w = R(60, 200) | 0; const dd = Object.keys(vec)[Math.random() * 4 | 0], [ax, ay] = vec[dd]; e.dir = dd; if (free(e.x + ax, e.y + ay, e)) {e.x += ax; e.y += ay}}}
 // calm, believable animal behaviour: slow walking with long rests
@@ -225,12 +237,12 @@ function autoAI(e) {
   const [nx, ny] = e.path[0]; if (free(nx, ny, e) && !(S.x == nx && S.y == ny) && !(Math.abs(S.px - nx) < .8 && Math.abs(S.py - ny) < .8)) {e.dir = nx > e.x ? 'right' : nx < e.x ? 'left' : ny > e.y ? 'down' : 'up'; e.x = nx; e.y = ny; e.path.shift(); e.wait = 0; if (!e.path.length) e.rest = 120 + Math.random() * 260 | 0}
   else {e.wait++; const near = Math.abs(S.x - e.x) + Math.abs(S.y - e.y) < 6; if (e.wait == 30 && near) {sfx('honk'); toast('Beep beep! Move aside!')} if (e.wait > 140) {e.path = []; e.wait = 0; e.rest = 40}}}
 function update() {
-  tick++; const SPD = S && S.swim ? .042 : keys.Shift ? .1 : .055; if (toastT) toastT--; if (S && S.grace) S.grace--; if (fade) fade--;
-  if (!S || B || MENU || PNL || INV || CHO || CODE) return;
+  tick++; const SPD = (S && S.swim ? .042 : S && S.riding ? ridingSpeed() : keys.Shift ? .1 : .055) * (S && S.slowUntil > Date.now() ? .5 : 1); if (toastT) toastT--; if (S && S.grace) S.grace--; if (fade) fade--;
+  if (!S || B || MENU || PNL || CHO || CODE || MOD) return;
   for (const k in GONE) {if (--GONE[k] <= 0) {const [mp, sl] = k.split(':'); if (S.map == mp) {const d = cur().d, f = d.foes[+sl]; if (f && Math.abs(f[0] - S.x) + Math.abs(f[1] - S.y) > 9 && free(f[0], f[1])) {delete GONE[k]; ents.push({t: 'foe', f: f[3], m: f[2], x: f[0], y: f[1], px: f[0], py: f[1], dir: 'down', a: 0, w: 60, wander: 1, slot: +sl})} else GONE[k] = 30} else delete GONE[k]}}
-  ents.forEach(entUpdate);
+  ents.forEach(entUpdate); hazards();
   if (S.px != S.x || S.py != S.y) {S.px += Math.sign(S.x - S.px) * Math.min(SPD, Math.abs(S.x - S.px)); S.py += Math.sign(S.y - S.py) * Math.min(SPD, Math.abs(S.y - S.py)); S.anim++; if (S.px == S.x && S.py == S.y) arrive()}
-  else if (!D && !SH) {for (const k in dirs) if (keys[k]) {const dd = dirs[k], [dx, dy] = vec[dd]; S.dir = dd; if (free(S.x + dx, S.y + dy)) {S.x += dx; S.y += dy} break}}}
+  else if (!D && !SH) {let any = 0; for (const k in dirs) if (keys[k]) {any = 1; const dd = dirs[k], [dx, dy] = vec[dd]; if (!IS_TOUCH && S.dir != dd) {S.dir = dd; S.tw = 7; break} if (S.tw > 0) {S.tw--; break} S.dir = dd; if (free(S.x + dx, S.y + dy)) {S.x += dx; S.y += dy} break} if (!any) S.tw = 0}}
 // ---------- battle logic ----------
 function startBattle(e) {
   const F = FOES[e.f], st = foeStats(e);
@@ -239,11 +251,11 @@ function startBattle(e) {
 function floatText(t, on, c) {B.ft.push({x: on == 'foe' ? 368 : 98, y: on == 'foe' ? 70 : 140, t, c: c || (on == 'foe' ? '#fff' : '#ff5a5a'), l: 50})}
 async function atk(i) {
   if (!B || B.busy || B.over) return; if (B.bag) {B.bag = 0; return} if (i == 3) return drinkChai(); if (i == 4) return runAway(); if (i == 5) {B.bag = 1; B.bsel = 0; sfx('select'); return}
-  const it = ITEMS[S.eq], m = it.moves[i]; if (!m) return;
+  const it = ITEMS[S.eq], m = it.moves[i]; if (!m) return; const mi = moveInfo(m);
   B.busy = 1; B.lunge = performance.now(); B.msg = 'You use ' + m.n + '!'; spawnFx(m.fx, 'foe'); sfx(m.k == 'sharp' ? 'slash' : 'hit'); await sleep(420);
-  const stat = m.k == 'sharp' ? it.sharp : m.k == 'heavy' ? it.wt : it.pow, acc = m.k == 'heavy' ? .78 : m.k == 'sharp' ? .92 : .88;
+  const stat = m.k == 'sharp' ? it.sharp : m.k == 'heavy' ? it.wt : it.pow, acc = mi.acc;
   if (Math.random() > acc) {floatText('MISS', 'foe', '#bbb'); sfx('miss'); B.msg = 'You missed!'}
-  else {const crit = Math.random() < (m.k == 'sharp' ? .22 : .12), dm = Math.round((m.b + stat * .6 + S.lv * 1.4 + it.str * .4) * R(.85, 1.15) * (crit ? 1.6 : 1)); B.hp = Math.max(0, B.hp - dm); B.hitF = performance.now(); B.shake = Math.max(B.shake, 10); sfx(crit ? 'crit' : 'hit'); floatText(dm + (crit ? '!' : ''), 'foe', crit ? '#ffd34d' : '#fff'); B.msg = (crit ? 'Critical hit! ' : '') + dm + ' damage to ' + B.F.n + '!'}
+  else {const crit = Math.random() < (m.k == 'sharp' ? .22 : .12), dm = Math.round((m.b + stat * .6 + S.lv * 1.4 + it.str * .4) * mi.mult * R(.85, 1.15) * (crit ? 1.6 : 1)); B.hp = Math.max(0, B.hp - dm); B.hitF = performance.now(); B.shake = Math.max(B.shake, 10); sfx(crit ? 'crit' : 'hit'); floatText(dm + (crit ? '!' : ''), 'foe', crit ? '#ffd34d' : '#fff'); B.msg = (crit ? 'Critical hit! ' : '') + (mi.eff == 'effective' ? 'Super effective! ' : mi.eff == 'waste' ? 'Not very effective... ' : '') + dm + ' damage to ' + B.F.n + '!'}
   await sleep(800); if (B.hp <= 0) return win(); await foeTurn()}
 async function switchWeapon(id) {if (!B || B.busy || B.over || id == S.eq) {if (B) B.bag = 0; return} B.bag = 0; B.busy = 1; S.eq = id; sfx('select'); B.msg = 'You switch to ' + ITEMS[id].n + '! (this uses your turn)'; await sleep(900); await foeTurn()}
 async function drinkChai() {if (!B || B.busy || B.over) return; B.bag = 0; if (S.chai <= 0) {B.msg = 'No chai left!'; return} if (S.hp >= S.maxhp) {B.msg = 'HP is already full!'; return}
@@ -262,7 +274,7 @@ async function foeTurn() {
   B.shake = Math.max(B.shake, 12); B.hitM = performance.now(); sfx('hit'); B.msg = F.n + ' uses ' + mv.n + '! You take ' + tot + ' damage' + (enr > 1 ? ' (enraged!)' : ''); await sleep(900);
   if (S.hp <= 0) return lose(); B.busy = 0; B.msg = 'Your move!'}
 async function win() {
-  const F = B.F, e = B.e, lvDiff = B.lv - S.lv, xp = Math.round(B.xp * Math.max(.5, Math.min(2.5, 1 + lvDiff * .18)));
+  const F = B.F, e = B.e, lvDiff = B.lv - S.lv, xp = Math.round(B.xp * (1 + S.lv * .07) * Math.max(.5, Math.min(2.5, 1 + lvDiff * .18)));
   B.over = 1; B.msg = F.n + ' is defeated!'; sfx('win'); await sleep(1100);
   const coin = Math.round(B.coin); S.money += coin; gainXP(xp); toast('+' + xp + ' XP   +Rs.' + coin);
   if (F.boss) {S.flags['boss_' + S.map] = 1; if (F.reward && !S.items.includes(F.reward)) S.items.push(F.reward)}
@@ -271,8 +283,7 @@ async function win() {
   if (e.slot != null) GONE[S.map + ':' + e.slot] = 2700;
   const was = F.boss; ents = ents.filter(x => x !== e); B = null; S.grace = 100; save(); if (was) say(F.win, null, F.n, null)}
 async function lose() {
-  B.msg = 'You collapse...'; B.over = 1; sfx('lose'); await sleep(1200); const lost = Math.min(S.money, Math.floor(S.money * .25)); S.money -= lost;
+  B.msg = 'You collapse...'; B.over = 1; sfx('lose'); await sleep(1200); const lost = Math.min(S.money, 400, Math.floor(S.money * .1)); S.money -= lost;
   const mid = cityOf(), d = MAPS[mid]; let best = null, bd = 1e9; d.blds.forEach(b => {if (b[7] == 'h') {const ox = S.map.startsWith('in_') ? S.ret.x : S.x, oy = S.map.startsWith('in_') ? S.ret.y : S.y, dd = Math.abs(b[0] - ox) + Math.abs(b[1] - oy); if (dd < bd) {bd = dd; best = b}}});
   B = null; const f = best ? [best[0] + (best[2] >> 1), best[1] + best[3]] : d.start; S.hp = S.maxhp; changeMap(mid, f[0], f[1]);
   say(['You wake up outside a hospital. The nurses patched you up completely.', 'HP is full again, but you lost Rs.' + lost + '. Be careful out there!'], null, 'Nurse', NPCL.nurse)}
-

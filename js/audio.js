@@ -82,4 +82,3 @@ function sfx(name) {
   else if (name == 'unlock') bl([440, 554, 659, 880], 'triangle', .25, .1);
   else if (name == 'wrong') bl([200, 150], 'sawtooth', .15, .12);
 }
-

@@ -3,7 +3,7 @@
 let GAIT=1; // 1 = walking, ~1.8 = running (set by drawPlayer)
 function drawChar(x,y,L,dir,anim,s=1){
   X.save();X.translate(x,y);X.scale(s,s);if(L.sc){X.translate(16,30);X.scale(L.sc,L.sc);X.translate(-16,-30)}
-  const run=GAIT>1,ph=anim?anim*.174*GAIT:0,sn=anim?Math.sin(ph):0,amp=run?3:2,bob=anim?-Math.round(Math.abs(sn)*(run?2:1.3)):0,sw=Math.round(sn*(run?2:1.4)),liftA=sn>0?Math.round(sn*amp):0,liftB=sn<0?Math.round(-sn*amp):0,side=dir=='left'||dir=='right',acc=L.acc||'#f2c94c',shoe=L.teen?'#f4f4f4':'#2b1b12';
+  const run=GAIT>1,ph=anim?anim*.174*GAIT:0,sn=anim?Math.sin(ph):0,amp=run?3:2,bob=anim?-Math.round(Math.abs(sn)*(run?2:1.3)):0,sw=Math.round(sn*(run?2:1.4)),liftA=sn>0?Math.round(sn*amp):0,liftB=sn<0?Math.round(-sn*amp):0,side=dir=='left'||dir=='right',acc=L.acc||'#f2c94c',shoe=L.shoeC||(L.teen?'#f4f4f4':'#2b1b12');
   if(dir=='left'){X.translate(32,0);X.scale(-1,1)}
   const r=(c,a,b,w,h)=>{X.fillStyle=c;X.fillRect(a,b+bob,w,h)},hs=L.hs||'short',hc=L.hair||'#111',front=dir=='down',back=dir=='up';
   X.fillStyle='rgba(0,0,0,.28)';X.fillRect(L.big?6:8,28,L.big?20:16,4);
@@ -155,13 +155,13 @@ function drawEnt(e){const x=e.px*T,y=e.py*T,mv=e.px!=e.x||e.py!=e.y;
   else if(e.t=='auto'){drawAuto(x,y,e.dir,tick+e.seed)}
   else if(e.t=='foe'||e.t=='boss'){const F=FOES[e.f],lk=LOOKF[F.look];drawChar(x,y,lk,e.dir,mv?e.a:0);
     const lab=F.boss?'BOSS':'Lv'+elv(e);X.font="bold 8px monospace";X.textAlign='center';X.lineWidth=2.5;X.lineJoin='round';X.strokeStyle='rgba(0,0,0,.85)';X.strokeText(lab,x+16,y-(F.boss?8:3));X.fillStyle=F.boss?'#ff5a5a':F.guard?'#f2a93b':'#ffd36b';X.fillText(lab,x+16,y-(F.boss?8:3));X.textAlign='left'}}
-function drawPlayer(){const x=S.px*T,y=S.py*T,mv=S.px!=S.x||S.py!=S.y,a=mv?S.anim:0,run=mv&&!S.swim&&!!keys.Shift;
+function drawPlayer(){const x=S.px*T,y=S.py*T,mv=S.px!=S.x||S.py!=S.y,a=mv?S.anim:0,run=mv&&!S.swim&&!!keys.Shift&&!S.riding;if(S.riding&&!S.swim)return drawRider(x,y,mv,a);
   if(S.swim)return drawSwimmer(x,y,mv);
   if(run){ // little dust puffs kicked up behind the runner
     const[dx,dy]=vec[S.dir];for(let k=0;k<4;k++){const age=(tick*1.2+k*5)%20,al=1-age/20;X.fillStyle='rgba(230,205,160,'+(al*.55)+')';const sz=2+age*.18;X.fillRect(Math.round(x+16-dx*(6+age*.7)-sz/2+(k%2?3:-3)*(dy?1:0)),Math.round(y+28-dy*(age*.5)-age*.25-sz/2+(dx?(k%2?2:-1):0)),sz,sz)}}
-  GAIT=run?1.8:1;drawChar(x,y,LOOKS[S.look],S.dir,a);GAIT=1}
+  GAIT=run?1.8:1;drawChar(x,y,myLook(),S.dir,a);GAIT=1}
 // swimming: head and shoulders above the surface, arms doing a front-crawl stroke, a wake behind and splashes
-function drawSwimmer(x,y,mv){const t=tick,ph=t*(mv?.26:.09),bob=Math.sin(t/9)*(mv?.9:1.4),vy=y+8+bob,L=LOOKS[S.look],[dx,dy]=vec[S.dir],sideV=dx!=0;
+function drawSwimmer(x,y,mv){const t=tick,ph=t*(mv?.26:.09),bob=Math.sin(t/9)*(mv?.9:1.4),vy=y+8+bob,L=myLook(),[dx,dy]=vec[S.dir],sideV=dx!=0;
   // wake rings + V trail behind the swimmer
   X.save();X.lineWidth=1.2;for(let i=0;i<5;i++){const age=(t*(mv?.9:.35)+i*6)%30,al=1-age/30;X.strokeStyle='rgba(255,255,255,'+(al*.8)+')';const r=3+age*.45;
     if(mv){X.beginPath();X.ellipse(x+16-dx*age*.8,y+25-dy*age*.55,r,r*.38,0,0,7);X.stroke()}else{X.beginPath();X.ellipse(x+16,y+25,r+2,(r+2)*.35,0,0,7);X.stroke()}}
@@ -181,4 +181,3 @@ function drawSwimmer(x,y,mv){const t=tick,ph=t*(mv?.26:.09),bob=Math.sin(t/9)*(m
   for(let i=0;i<9;i++){const wx=x-2+i*4+((t>>2)%4),wy=y+17+Math.round(Math.sin(t/5+i*1.7)*1);rc('rgba(255,255,255,.7)',wx,wy,3,1)}
   X.globalAlpha=.9;if(mv){for(let k=0;k<4;k++){const age=(t*1.1+k*6)%18;rc('rgba(255,255,255,'+(1-age/18)+')',x+16+(k-1.5)*4+dx*5,y+17-age*.45,1.5,1.5)}}X.globalAlpha=1}
 function entsSorted(){[...ents.map(e=>({y:e.py+(e.t=='auto'?.5:0),f:()=>drawEnt(e)})),{y:S.py,f:drawPlayer}].sort((a,b)=>a.y-b.y).forEach(o=>o.f())}
-

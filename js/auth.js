@@ -30,3 +30,4 @@ const eye = $('eyeBtn'); eye.onclick = () => {const p = $('uPass'), show = p.typ
 for (const id of ['uName', 'uPass']) $(id).addEventListener('keydown', e => {if (e.key == 'Enter') doLogin()});
 try {const last = localStorage.getItem('bq_last'); if (last) {$('uName').value = last; setTimeout(() => $('uPass').focus(), 50)} else setTimeout(() => $('uName').focus(), 50)} catch (e) {}
 
+{const lab = () => {const n = $('uName').value.trim().toLowerCase(), u = getUsers()[n]; $('goBtn').textContent = u && localStorage.getItem(saveKey(n)) ? 'Continue game' : 'Start new game'}; const last = localStorage.getItem('bq_last'); if (last && !$('uName').value) $('uName').value = last; $('uName').addEventListener('input', lab); lab()}
