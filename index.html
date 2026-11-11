@@ -5,7 +5,7 @@
 <title>HYDRPG</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#141b2e">
-<link rel="manifest" href="manifest.json"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
+
 <link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -23,7 +23,7 @@
       <div class="pwrap"><input id="uPass" type="password" maxlength="30" autocomplete="current-password" placeholder="at least 3 characters">
       <button type="button" id="eyeBtn" class="eye" aria-label="Show password" title="Show password"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3.2"/><line id="eyeSlash" x1="3" y1="3" x2="21" y2="21"/></svg></button></div>
       <button id="goBtn" class="big">Enter the game</button>
-      <button id="fsBtn" class="small" style="display:none">Play full screen</button><button id="installBtn" class="small" style="display:none">Install app</button>
+      <button id="fsBtn" class="small" style="display:none">Play full screen</button>
       <div id="msg" class="msg"></div>
       <p class="hint">New here? Type a name and password and press the button. Returning players continue where they left off.<br>Progress is saved in this browser.</p>
     </div>
@@ -58,10 +58,8 @@
 <script src="js/main.js"></script>
 <script src="js/touch.js"></script>
 <script>
-if ('serviceWorker' in navigator && location.protocol.indexOf('http') == 0) navigator.serviceWorker.register('sw.js').catch(function () {});
-var dip = null; addEventListener('beforeinstallprompt', function (e) {e.preventDefault(); dip = e; document.getElementById('installBtn').style.display = 'inline-block'});
-document.getElementById('installBtn').onclick = function () {if (dip) {dip.prompt(); dip = null; this.style.display = 'none'}};
 if (matchMedia('(pointer:coarse)').matches) document.getElementById('fsBtn').style.display = 'inline-block';
 </script>
 </body>
 </html>
+
